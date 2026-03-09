@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#8B1A1A"/>
+  <g transform="translate(256,256)">
+    <!-- Graduation cap -->
+    <polygon points="0,-120 148,0 0,53 -148,0" fill="white"/>
+    <rect x="-22" y="0" width="44" height="80" fill="white"/>
+    <polygon points="-80,53 80,53 66,133 -66,133" fill="white" opacity="0.9"/>
+    <line x1="148" y1="0" x2="148" y2="60" stroke="white" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="148" cy="74" r="18" fill="white"/>
+  </g>
+</svg>
