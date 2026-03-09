@@ -60,6 +60,35 @@ function Dashboard() {
   // Key used to store today's offline records in localStorage (uses LOCAL date)
   const offlineKey = () => `offline_attendance_${localDate()}`;
 
+  // Push any _offline records to the server (runs after we confirm connectivity)
+  const syncOfflineRecords = async (token) => {
+    const key = offlineKey();
+    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+    const pending = saved.filter((r) => r._offline);
+    if (pending.length === 0) return;
+
+    const synced = [];
+    for (const record of pending) {
+      try {
+        const res = await fetch(`${API}/attendance`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ lrn: record.lrn, date: record.date || localDate() }),
+        });
+        // 201 = saved, 400 with "already marked" = already in DB from another device
+        if (res.ok || res.status === 400) synced.push(record.lrn);
+      } catch { /* still offline, leave for next load */ }
+    }
+
+    if (synced.length > 0) {
+      // Remove _offline flag from synced records
+      const updated = saved.map((r) =>
+        synced.includes(r.lrn) ? { ...r, _offline: undefined } : r
+      );
+      localStorage.setItem(key, JSON.stringify(updated));
+    }
+  };
+
   // Fetch students + today's attendance on mount
   useEffect(() => {
     const token = getToken();
@@ -74,19 +103,25 @@ function Dashboard() {
       fetch(`${API}/students`, { headers }).then((r) => r.json()),
       fetch(`${API}/attendance?date=${localDate()}`, { headers }).then((r) => r.json()),
     ])
-      .then(([s, a]) => {
+      .then(async ([s, a]) => {
         if (Array.isArray(s)) setStudents(s);
-        if (Array.isArray(a)) {
-          // Merge API records with any offline records not yet synced
-          const offlineSaved = JSON.parse(localStorage.getItem(offlineKey()) || "[]");
-          const merged = [...a];
-          offlineSaved.forEach((ol) => {
-            if (!merged.some((r) => r.lrn === ol.lrn)) merged.push(ol);
-          });
-          // Always persist to localStorage so records survive backend going offline
-          localStorage.setItem(offlineKey(), JSON.stringify(merged));
-          setAttendanceList(merged);
-        }
+
+        // Sync any offline records FIRST so the subsequent fetch gets them all
+        await syncOfflineRecords(token);
+
+        // Re-fetch attendance after sync so we get the newly-synced records too
+        const fresh = await fetch(`${API}/attendance?date=${localDate()}`, { headers }).then((r) => r.json()).catch(() => a);
+        const apiRecords = Array.isArray(fresh) ? fresh : (Array.isArray(a) ? a : []);
+
+        // Merge API records with any still-offline records (couldn't sync)
+        const offlineSaved = JSON.parse(localStorage.getItem(offlineKey()) || "[]");
+        const merged = [...apiRecords];
+        offlineSaved.filter((ol) => ol._offline).forEach((ol) => {
+          if (!merged.some((r) => r.lrn === ol.lrn)) merged.push(ol);
+        });
+        // Persist updated list to localStorage
+        localStorage.setItem(offlineKey(), JSON.stringify(merged));
+        setAttendanceList(merged);
       })
       .catch(() => {
         // Backend unreachable — keep offline records, do NOT force logout
@@ -336,7 +371,8 @@ function Dashboard() {
         setMessage("");
         setMessageType("");
       } catch {
-        const offlineRecord = { ...matched, timeIn: new Date().toLocaleTimeString(), _offline: true };
+        // Store date so we can sync this record to the server later
+        const offlineRecord = { ...matched, date: localDate(), timeIn: new Date().toLocaleTimeString(), status: "Present", _offline: true };
         setAttendanceList((prev) => [offlineRecord, ...prev]);
         // Persist to localStorage so the record survives logout
         const key = offlineKey();
@@ -344,7 +380,7 @@ function Dashboard() {
         if (!existing.some((r) => r.lrn === matched.lrn)) {
           localStorage.setItem(key, JSON.stringify([offlineRecord, ...existing]));
         }
-        setMessage(matched.name + " (LRN: " + matched.lrn + ") - Present! (offline)");
+        setMessage(matched.name + " (LRN: " + matched.lrn + ") - Present! (saved offline, will sync when connected)");
         setMessageType("success");
       }
     } catch {
