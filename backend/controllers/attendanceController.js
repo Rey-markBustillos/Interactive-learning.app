@@ -4,7 +4,7 @@ import Student from "../models/Student.js";
 // POST /api/attendance
 export const markAttendance = async (req, res, next) => {
   try {
-    const { lrn } = req.body;
+    const { lrn, date: clientDate } = req.body;
 
     if (!lrn) {
       return res.status(400).json({ message: "LRN is required" });
@@ -15,7 +15,8 @@ export const markAttendance = async (req, res, next) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    // Use the client's local date if provided (avoids UTC timezone mismatch for PH users)
+    const today = clientDate || new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const now = new Date();
     const timeIn = now.toLocaleTimeString();
     // Late if scanned after 7:40 AM

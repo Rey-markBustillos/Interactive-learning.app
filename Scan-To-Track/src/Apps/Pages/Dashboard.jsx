@@ -13,6 +13,12 @@ import TrackingPage from "./TrackingPage";
 
 const API = import.meta.env.VITE_API_URL;
 
+// Returns today's date in YYYY-MM-DD using the device's LOCAL timezone (not UTC)
+const localDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 function Dashboard() {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("attendance");
@@ -38,7 +44,7 @@ function Dashboard() {
   const [addLoading, setAddLoading] = useState(false);
 
   //  Report state
-  const [reportDate, setReportDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [reportDate, setReportDate] = useState(() => localDate());
   const [reportList, setReportList] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
 
@@ -51,8 +57,8 @@ function Dashboard() {
     }
   }, [scanning, activeStream]);
 
-  // Key used to store today's offline records in localStorage
-  const offlineKey = () => `offline_attendance_${new Date().toISOString().split("T")[0]}`;
+  // Key used to store today's offline records in localStorage (uses LOCAL date)
+  const offlineKey = () => `offline_attendance_${localDate()}`;
 
   // Fetch students + today's attendance on mount
   useEffect(() => {
@@ -66,7 +72,7 @@ function Dashboard() {
     const headers = { Authorization: `Bearer ${token}` };
     Promise.all([
       fetch(`${API}/students`, { headers }).then((r) => r.json()),
-      fetch(`${API}/attendance`, { headers }).then((r) => r.json()),
+      fetch(`${API}/attendance?date=${localDate()}`, { headers }).then((r) => r.json()),
     ])
       .then(([s, a]) => {
         if (Array.isArray(s)) setStudents(s);
@@ -308,7 +314,7 @@ function Dashboard() {
         const res = await fetch(`${API}/attendance`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-          body: JSON.stringify({ lrn: matched.lrn }),
+          body: JSON.stringify({ lrn: matched.lrn, date: localDate() }),
         });
         const d = await res.json();
         if (!res.ok) { setMessage(d.message || "Failed to mark attendance"); setMessageType("warning"); setProcessing(false); return; }
