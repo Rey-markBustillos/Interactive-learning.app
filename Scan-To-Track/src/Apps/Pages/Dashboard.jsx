@@ -109,19 +109,24 @@ function Dashboard() {
         // Sync any offline records FIRST so the subsequent fetch gets them all
         await syncOfflineRecords(token);
 
-        // Re-fetch attendance after sync so we get the newly-synced records too
-        const fresh = await fetch(`${API}/attendance?date=${localDate()}`, { headers }).then((r) => r.json()).catch(() => a);
-        const apiRecords = Array.isArray(fresh) ? fresh : (Array.isArray(a) ? a : []);
+        // Re-fetch attendance after sync
+        const fresh = await fetch(`${API}/attendance?date=${localDate()}`, { headers }).then((r) => r.json()).catch(() => null);
 
-        // Merge API records with any still-offline records (couldn't sync)
-        const offlineSaved = JSON.parse(localStorage.getItem(offlineKey()) || "[]");
-        const merged = [...apiRecords];
-        offlineSaved.filter((ol) => ol._offline).forEach((ol) => {
-          if (!merged.some((r) => r.lrn === ol.lrn)) merged.push(ol);
-        });
-        // Persist updated list to localStorage
-        localStorage.setItem(offlineKey(), JSON.stringify(merged));
-        setAttendanceList(merged);
+        // Only use the API result if it is actually an array — never treat a server error as empty
+        const apiRecords = Array.isArray(fresh) ? fresh : (Array.isArray(a) ? a : null);
+
+        if (apiRecords !== null) {
+          // Merge API records with any still-offline records (couldn't sync)
+          const offlineSaved = JSON.parse(localStorage.getItem(offlineKey()) || "[]");
+          const merged = [...apiRecords];
+          offlineSaved.filter((ol) => ol._offline).forEach((ol) => {
+            if (!merged.some((r) => r.lrn === ol.lrn)) merged.push(ol);
+          });
+          // Only persist when we have a confirmed good response so we don't wipe data
+          localStorage.setItem(offlineKey(), JSON.stringify(merged));
+          setAttendanceList(merged);
+        }
+        // If server returned an error (sleeping Render), keep whatever is already shown
       })
       .catch(() => {
         // Backend unreachable — keep offline records, do NOT force logout

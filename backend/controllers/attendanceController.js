@@ -18,9 +18,11 @@ export const markAttendance = async (req, res, next) => {
     // Use the client's local date if provided (avoids UTC timezone mismatch for PH users)
     const today = clientDate || new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const now = new Date();
-    const timeIn = now.toLocaleTimeString();
-    // Late if scanned after 7:40 AM
-    const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 40);
+    // Render runs in UTC — compute Philippine time (UTC+8) for correct timeIn and Late check
+    const phHour = (now.getUTCHours() + 8) % 24;
+    const phMin = now.getUTCMinutes();
+    const timeIn = `${String(phHour % 12 || 12).padStart(2, '0')}:${String(phMin).padStart(2, '0')} ${phHour < 12 ? 'AM' : 'PM'}`;
+    const isLate = phHour > 7 || (phHour === 7 && phMin > 40);
     const status = isLate ? "Late" : "Present";
 
     // Check if already marked today
