@@ -11,7 +11,7 @@ import ReportPage from "./ReportPage";
 import AboutPage from "./AboutPage";
 import TrackingPage from "./TrackingPage";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
   const navigate = useNavigate();

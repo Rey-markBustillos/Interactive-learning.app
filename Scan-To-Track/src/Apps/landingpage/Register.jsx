@@ -39,7 +39,7 @@ function Register() {
     if (!adminPassword.trim()) { setAdminError("Password is required."); return; }
     setAdminLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: adminEmail, password: adminPassword }),
@@ -67,7 +67,7 @@ function Register() {
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

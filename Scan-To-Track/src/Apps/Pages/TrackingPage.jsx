@@ -5,7 +5,7 @@ import {
   FaTimes, FaFileExcel,
 } from "react-icons/fa";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL;
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const DAYS_SHORT = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 const MONTH_NAMES = [

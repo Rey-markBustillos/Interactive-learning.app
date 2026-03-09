@@ -44,7 +44,7 @@ function LandingPage() {
     if (!lrn.trim()) { setTrackError("Please enter your LRN."); return; }
     setTrackLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/public/track?lrn=${encodeURIComponent(lrn.trim())}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/public/track?lrn=${encodeURIComponent(lrn.trim())}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setTrackResult(data);
