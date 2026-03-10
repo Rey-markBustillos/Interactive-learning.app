@@ -75,8 +75,8 @@ export const deleteStudent = async (req, res, next) => {
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
-    // Also remove all attendance records belonging to this student
-    await Attendance.deleteMany({ student: student._id, owner: req.user._id });
+    // Remove all attendance tied to this student to avoid orphan records.
+    await Attendance.deleteMany({ student: student._id });
     res.json({ message: "Student removed" });
   } catch (error) {
     next(error);

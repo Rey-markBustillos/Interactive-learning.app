@@ -90,8 +90,16 @@ export const deleteUser = async (req, res, next) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     if (user.role === "admin") return res.status(403).json({ message: "Cannot delete an admin account" });
 
-    // Cascade delete all attendance records and students owned by this user
-    await Attendance.deleteMany({ owner: req.params.id });
+    // Gather owned student IDs first, then remove all linked attendance records.
+    const ownedStudents = await Student.find({ owner: req.params.id }).select("_id");
+    const studentIds = ownedStudents.map((s) => s._id);
+
+    await Attendance.deleteMany({
+      $or: [
+        { owner: req.params.id },
+        { student: { $in: studentIds } },
+      ],
+    });
     await Student.deleteMany({ owner: req.params.id });
     await User.findByIdAndDelete(req.params.id);
 
