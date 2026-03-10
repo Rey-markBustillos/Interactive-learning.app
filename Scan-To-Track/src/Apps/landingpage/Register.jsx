@@ -66,6 +66,7 @@ function Register() {
     if (!email.trim()) { setError("Email is required."); return; }
     if (!password.trim()) { setError("Password is required."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (!subject.trim()) { setError("Subject is required."); return; }
     setLoading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
@@ -74,7 +75,7 @@ function Register() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ name, email, password, subjects: subject.trim() ? [subject.trim()] : [] }),
+        body: JSON.stringify({ name, email, password, subjects: [subject.trim()] }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -212,6 +213,7 @@ function Register() {
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="e.g. Mathematics"
                     className="w-full pl-9 pr-4 py-2.5 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition text-sm"
+                    required
                   />
                 </div>
               </div>

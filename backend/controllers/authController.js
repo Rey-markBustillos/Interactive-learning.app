@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Student from "../models/Student.js";
+import Attendance from "../models/Attendance.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -87,7 +89,12 @@ export const deleteUser = async (req, res, next) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
     if (user.role === "admin") return res.status(403).json({ message: "Cannot delete an admin account" });
+
+    // Cascade delete all attendance records and students owned by this user
+    await Attendance.deleteMany({ owner: req.params.id });
+    await Student.deleteMany({ owner: req.params.id });
     await User.findByIdAndDelete(req.params.id);
+
     res.json({ message: "User deleted successfully" });
   } catch (error) {
     next(error);
