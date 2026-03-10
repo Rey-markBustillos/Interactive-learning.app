@@ -108,22 +108,27 @@ app.get("/api/public/track", async (req, res) => {
     const subjectMap = {};
     ownerSubjects.forEach((sub) => { subjectMap[sub] = []; });
 
-    // Group records by their subject; skip records with no subject
+    // Group records by their subject
     records.forEach((r) => {
       const sub = r.subject && r.subject.trim() ? r.subject.trim() : null;
-      if (!sub) return;
-      if (!subjectMap[sub]) subjectMap[sub] = [];
-      subjectMap[sub].push({ date: r.date, timeIn: r.timeIn, status: r.status });
-    });
-
-    // Fallback: if teacher has no subjects set, show actual subjects from records
-    if (ownerSubjects.length === 0) {
-      records.forEach((r) => {
-        const sub = r.subject && r.subject.trim() ? r.subject.trim() : null;
-        if (!sub) return;
+      if (sub) {
         if (!subjectMap[sub]) subjectMap[sub] = [];
         subjectMap[sub].push({ date: r.date, timeIn: r.timeIn, status: r.status });
-      });
+      } else {
+        // Records with no subject → put under "All" as fallback
+        if (!subjectMap["All"]) subjectMap["All"] = [];
+        subjectMap["All"].push({ date: r.date, timeIn: r.timeIn, status: r.status });
+      }
+    });
+
+    // If teacher has named subjects but all records were empty-subject (old data),
+    // move the "All" bucket into the first named subject and remove "All"
+    if (ownerSubjects.length > 0 && subjectMap["All"]?.length > 0) {
+      const hasNamedRecords = ownerSubjects.some((s) => subjectMap[s]?.length > 0);
+      if (!hasNamedRecords) {
+        subjectMap[ownerSubjects[0]] = subjectMap["All"];
+        delete subjectMap["All"];
+      }
     }
 
     const subjects = Object.entries(subjectMap).map(([subject, recs]) => ({
