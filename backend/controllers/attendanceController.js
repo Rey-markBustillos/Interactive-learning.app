@@ -4,7 +4,7 @@ import Student from "../models/Student.js";
 // POST /api/attendance
 export const markAttendance = async (req, res, next) => {
   try {
-    const { lrn, date: clientDate } = req.body;
+    const { lrn, date: clientDate, subject } = req.body;
 
     if (!lrn) {
       return res.status(400).json({ message: "LRN is required" });
@@ -25,11 +25,11 @@ export const markAttendance = async (req, res, next) => {
     const isLate = phHour > 7 || (phHour === 7 && phMin > 40);
     const status = isLate ? "Late" : "Present";
 
-    // Check if already marked today
-    const existing = await Attendance.findOne({ student: student._id, date: today, owner: req.user._id });
+    // Check if already marked today for this subject
+    const existing = await Attendance.findOne({ student: student._id, date: today, owner: req.user._id, subject: subject || "" });
     if (existing) {
       return res.status(400).json({
-        message: `${student.name} is already marked present today`,
+        message: `${student.name} is already marked present today${subject ? ` for ${subject}` : ""}`,
         student,
       });
     }
@@ -40,6 +40,7 @@ export const markAttendance = async (req, res, next) => {
       date: today,
       timeIn,
       status,
+      subject: subject || "",
     });
 
     const populated = await attendance.populate("student");
@@ -52,7 +53,7 @@ export const markAttendance = async (req, res, next) => {
       date: populated.date,
       timeIn: populated.timeIn,
       status: populated.status,
-      status: populated.status,
+      subject: populated.subject,
     });
   } catch (error) {
     next(error);
@@ -89,6 +90,7 @@ export const getAllAttendance = async (req, res, next) => {
       date: r.date,
       timeIn: r.timeIn,
       status: r.status,
+      subject: r.subject || "",
     }));
 
     res.json(result);
@@ -114,6 +116,7 @@ export const getAttendance = async (req, res, next) => {
       date: r.date,
       timeIn: r.timeIn,
       status: r.status,
+      subject: r.subject || "",
     }));
 
     res.json(result);

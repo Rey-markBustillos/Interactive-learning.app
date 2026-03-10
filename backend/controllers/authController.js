@@ -8,7 +8,7 @@ const generateToken = (id) => {
 // POST /api/auth/register
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, subjects } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Please fill all fields" });
@@ -19,13 +19,19 @@ export const register = async (req, res, next) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({
+      name,
+      email,
+      password,
+      subjects: Array.isArray(subjects) ? subjects : [],
+    });
 
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
+      subjects: user.subjects,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -52,6 +58,7 @@ export const login = async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      subjects: user.subjects,
       token: generateToken(user._id),
     });
   } catch (error) {

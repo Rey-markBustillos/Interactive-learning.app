@@ -7,12 +7,13 @@ const attendanceSchema = new mongoose.Schema(
     date: { type: String, required: true }, // YYYY-MM-DD
     timeIn: { type: String, required: true },
     status: { type: String, enum: ["Present", "Late"], default: "Present" },
+    subject: { type: String, default: "" },
   },
   { timestamps: true }
 );
 
-// One attendance record per student per day per user
-attendanceSchema.index({ student: 1, date: 1, owner: 1 }, { unique: true });
+// One attendance record per student per day per user per subject
+attendanceSchema.index({ student: 1, date: 1, owner: 1, subject: 1 }, { unique: true });
 
 const Attendance = mongoose.model("Attendance", attendanceSchema);
 export default Attendance;

@@ -73,6 +73,9 @@ function SideNav({ active, onNavigate }) {
               <div className="min-w-0">
                 <p className="text-white text-sm font-semibold truncate">{user.name}</p>
                 <p className="text-red-300 text-xs truncate">{user.email}</p>
+                {user.section && (
+                  <p className="text-red-200 text-xs truncate mt-0.5">Section: {user.section}</p>
+                )}
               </div>
             </div>
           </div>

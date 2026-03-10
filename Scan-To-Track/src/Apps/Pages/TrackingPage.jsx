@@ -2,7 +2,7 @@
 import XLSXStyle from "xlsx-js-style";
 import {
   FaSearch, FaCalendarAlt, FaClipboardList, FaClock,
-  FaTimes, FaFileExcel,
+  FaTimes, FaFileExcel, FaBook, FaUserCheck,
 } from "react-icons/fa";
 
 const API = import.meta.env.VITE_API_URL;
@@ -39,6 +39,11 @@ function TrackingPage() {
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Current user
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const userSubjects = currentUser.subjects || [];
+  const [selectedSubject, setSelectedSubject] = useState(""); // "" = All
 
   // Export state
   const today = new Date();
@@ -389,14 +394,24 @@ function TrackingPage() {
     }
   };
 
-  // Group records by date
-  const grouped = records.reduce((acc, r) => {
+  // Group records by date (filtered by selected subject)
+  const filteredRecords = selectedSubject
+    ? records.filter((r) => (r.subject || "") === selectedSubject)
+    : records;
+
+  const grouped = filteredRecords.reduce((acc, r) => {
     if (!acc[r.date]) acc[r.date] = [];
     acc[r.date].push(r);
     return acc;
   }, {});
 
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+  // Per-subject present counts across all fetched records
+  const subjectCounts = userSubjects.map((sub) => ({
+    subject: sub,
+    count: records.filter((r) => (r.subject || "") === sub).length,
+  }));
 
   const statusBadge = (status) =>
     status === "Late"
@@ -405,6 +420,72 @@ function TrackingPage() {
 
   return (
     <div className="space-y-5">
+
+      {/* Per-subject summary cards */}
+      {subjectCounts.length > 0 && (
+        <div className={`grid gap-4 ${subjectCounts.length === 1 ? "grid-cols-1 max-w-xs" : subjectCounts.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+          {subjectCounts.map(({ subject, count }) => (
+            <button
+              key={subject}
+              onClick={() => setSelectedSubject(selectedSubject === subject ? "" : subject)}
+              className={`rounded-2xl p-5 flex items-center gap-4 shadow text-left transition cursor-pointer ${
+                selectedSubject === subject
+                  ? "bg-linear-to-br from-[#8B1A1A] to-[#4a0a0a] shadow-red-200"
+                  : "bg-white hover:shadow-md border border-gray-100"
+              }`}
+            >
+              <div className={`p-3 rounded-2xl shrink-0 ${
+                selectedSubject === subject ? "bg-white/20" : "bg-red-50"
+              }`}>
+                <FaUserCheck size={20} className={selectedSubject === subject ? "text-white" : "text-[#8B1A1A]"} />
+              </div>
+              <div className="min-w-0">
+                <p className={`text-xs font-semibold uppercase tracking-wide truncate ${
+                  selectedSubject === subject ? "text-red-200" : "text-gray-500"
+                }`}>{subject}</p>
+                <p className={`text-3xl font-bold mt-0.5 ${
+                  selectedSubject === subject ? "text-white" : "text-gray-800"
+                }`}>{count}</p>
+                <p className={`text-xs mt-0.5 ${
+                  selectedSubject === subject ? "text-red-200" : "text-gray-400"
+                }`}>present records</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Subject filter tabs (when user has multiple subjects) */}
+      {userSubjects.length > 1 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3 flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider shrink-0">
+            <FaBook className="inline mr-1 text-[#8B1A1A]" size={11} /> Filter:
+          </span>
+          <button
+            onClick={() => setSelectedSubject("")}
+            className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+              selectedSubject === ""
+                ? "bg-[#8B1A1A] text-white shadow-sm shadow-red-200"
+                : "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-[#8B1A1A]"
+            }`}
+          >
+            All
+          </button>
+          {userSubjects.map((sub) => (
+            <button
+              key={sub}
+              onClick={() => setSelectedSubject(selectedSubject === sub ? "" : sub)}
+              className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+                selectedSubject === sub
+                  ? "bg-[#8B1A1A] text-white shadow-sm shadow-red-200"
+                  : "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-[#8B1A1A]"
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Filter bar */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -454,7 +535,7 @@ function TrackingPage() {
 
         <div className="mt-3 flex items-center gap-2">
           <span className="text-xs text-gray-400">
-            {loading ? "Loading..." : `${records.length} record${records.length !== 1 ? "s" : ""} found`}
+            {loading ? "Loading..." : `${filteredRecords.length} record${filteredRecords.length !== 1 ? "s" : ""} found${selectedSubject ? ` for ${selectedSubject}` : ""}`}
           </span>
           {(debouncedSearch || filterDate) && (
             <span className="text-xs bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full">Filtered</span>
@@ -501,6 +582,9 @@ function TrackingPage() {
                           <span className="flex items-center gap-1"><FaClock size={10} /> Time In</span>
                         </th>
                         <th className="px-5 py-2.5 text-left font-semibold">Status</th>
+                        {userSubjects.length > 1 && selectedSubject === "" && (
+                          <th className="px-5 py-2.5 text-left font-semibold">Subject</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -522,6 +606,17 @@ function TrackingPage() {
                               {r.status}
                             </span>
                           </td>
+                          {userSubjects.length > 1 && selectedSubject === "" && (
+                            <td className="px-5 py-3">
+                              {r.subject ? (
+                                <span className="bg-red-50 text-[#8B1A1A] border border-red-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                  {r.subject}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300 text-xs">—</span>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>

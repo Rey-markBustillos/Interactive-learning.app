@@ -1,15 +1,59 @@
-import { FaCamera, FaUserCheck, FaUserTimes, FaUsers, FaSync, FaStop, FaSyncAlt } from "react-icons/fa";
+import { FaCamera, FaUserCheck, FaUserTimes, FaUsers, FaSync, FaStop, FaSyncAlt, FaBook } from "react-icons/fa";
 
 function AttendancePage({
-  totalStudents, presentCount, absentCount,
+  totalStudents, absentCount,
   scanning, processing, message, messageType,
   videoRef, canvasRef,
   startCamera, stopCamera, captureAndScan,
   switchCamera, facingMode,
   attendanceList,
+  subjects, selectedSubject, setSelectedSubject,
 }) {
+  // Filter attendance list to the selected subject
+  const subjectList = selectedSubject
+    ? attendanceList.filter((a) => (a.subject || "") === selectedSubject)
+    : attendanceList;
+  const subjectPresent = subjectList.length;
   return (
     <div className="space-y-6">
+      {/* Subject navbar badge (shows if a subject is selected) */}
+      {selectedSubject && (
+        <div className="w-full flex justify-center bg-white border-b border-gray-100 py-2 sticky top-0 z-10">
+          <span className="flex items-center gap-2 bg-[#8B1A1A] text-white px-4 py-1.5 rounded-xl text-sm font-semibold shadow-sm shadow-red-200">
+            <FaBook className="inline-block" size={13} />
+            {selectedSubject}
+          </span>
+        </div>
+      )}
+      {/* Subject Selector */}
+      {subjects && subjects.length > 0 && (
+        <div className="bg-white rounded-2xl shadow p-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 shrink-0">
+              <FaBook className="text-[#8B1A1A]" size={13} /> Subject:
+            </span>
+            {subjects.map((sub) => (
+              <button
+                key={sub}
+                onClick={() => setSelectedSubject(sub)}
+                className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+                  selectedSubject === sub
+                    ? "bg-[#8B1A1A] text-white shadow-md shadow-red-200"
+                    : "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-[#8B1A1A]"
+                }`}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+          {selectedSubject && (
+            <p className="text-xs text-gray-400 mt-2">
+              Scanning attendance for <strong className="text-[#8B1A1A]">{selectedSubject}</strong>
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="bg-linear-to-br from-[#8B1A1A] to-[#4a0a0a] rounded-2xl shadow-lg shadow-red-200 p-6 flex items-center gap-4">
@@ -22,8 +66,8 @@ function AttendancePage({
         <div className="bg-linear-to-br from-emerald-400 to-green-600 rounded-2xl shadow-lg shadow-green-200 p-6 flex items-center gap-4">
           <div className="bg-white/20 text-white p-3.5 rounded-2xl shrink-0"><FaUserCheck size={24} /></div>
           <div>
-            <p className="text-xs text-emerald-100 font-medium uppercase tracking-wide">Present</p>
-            <p className="text-3xl font-bold text-white mt-0.5">{presentCount}</p>
+            <p className="text-xs text-emerald-100 font-medium uppercase tracking-wide">Present{selectedSubject ? ` (${selectedSubject})` : ""}</p>
+            <p className="text-3xl font-bold text-white mt-0.5">{subjectPresent}</p>
           </div>
         </div>
         <div className="bg-linear-to-br from-red-400 to-rose-600 rounded-2xl shadow-lg shadow-red-200 p-6 flex items-center gap-4">
@@ -103,8 +147,10 @@ function AttendancePage({
 
       {/* Today's Attendance Table */}
       <div className="bg-white rounded-2xl shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Today&apos;s Attendance</h2>
-        {attendanceList.length === 0 ? (
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Today&apos;s Attendance{selectedSubject ? ` — ${selectedSubject}` : ""}
+        </h2>
+        {subjectList.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
               <FaUserCheck className="text-gray-300" size={28} />
@@ -125,7 +171,7 @@ function AttendancePage({
                 </tr>
               </thead>
               <tbody>
-                {attendanceList.map((s, i) => {
+                {subjectList.map((s, i) => {
                   // Determine if late: status === 'Late' or timeIn after 7:40am
                   let isLate = s.status === 'Late';
                   if (!s.status && s.timeIn) {
