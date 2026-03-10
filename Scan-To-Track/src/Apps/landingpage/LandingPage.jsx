@@ -107,7 +107,7 @@ function LandingPage() {
       <div className="relative z-10 flex flex-col min-h-screen">
 
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-5">
+      <header className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5 gap-3">
         <div className="flex items-center gap-3">
           <div className="bg-[#8B1A1A] p-2.5 rounded-xl">
             <FaGraduationCap size={22} className="text-white" />
@@ -134,17 +134,17 @@ function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-6 py-10 sm:py-16">
         <div className="bg-white/20 p-5 rounded-3xl mb-6 inline-block">
           <FaGraduationCap size={52} className="text-white" />
         </div>
 
-        <h2 className="text-5xl font-extrabold text-white mb-4 leading-tight">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
           Smart Attendance<br />
           <span className="text-red-200">Made Simple</span>
         </h2>
 
-        <p className="text-white/80 text-lg max-w-md mb-10">
+        <p className="text-white/80 text-base sm:text-lg max-w-md mb-8 sm:mb-10">
           Track student attendance instantly using School ID, LRN, or Name.
           Fast, accurate, and effortless.
         </p>
@@ -153,7 +153,7 @@ function LandingPage() {
         {!isInstalled && installPrompt && (
           <button
             onClick={handleInstall}
-            className="flex items-center gap-2 bg-white text-[#8B1A1A] font-bold px-7 py-3 rounded-2xl text-base shadow-xl hover:bg-red-50 hover:scale-105 transition-all duration-200 cursor-pointer mb-3 border-2 border-[#8B1A1A]"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-[#8B1A1A] font-bold px-6 sm:px-7 py-3 rounded-2xl text-sm sm:text-base shadow-xl hover:bg-red-50 hover:scale-105 transition-all duration-200 cursor-pointer mb-3 border-2 border-[#8B1A1A]"
           >
             <FaDownload size={16} /> Install App
           </button>
@@ -161,14 +161,14 @@ function LandingPage() {
 
         <button
           onClick={() => setShowTracker(true)}
-          className="flex items-center gap-3 bg-white/15 border border-white/30 text-white font-bold px-7 py-3.5 rounded-2xl text-base shadow hover:bg-white/25 transition-all duration-200 cursor-pointer mb-4"
+          className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white/15 border border-white/30 text-white font-bold px-6 sm:px-7 py-3.5 rounded-2xl text-sm sm:text-base shadow hover:bg-white/25 transition-all duration-200 cursor-pointer mb-4"
         >
           <FaSearch size={15} className="text-white" /> Track My Attendance
         </button>
 
         <button
           onClick={() => navigate("/login")}
-          className="flex items-center gap-3 bg-[#8B1A1A] text-white font-bold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-[#a52020] hover:scale-105 transition-all duration-200 cursor-pointer"
+          className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#8B1A1A] text-white font-bold px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl text-base sm:text-lg shadow-xl hover:bg-[#a52020] hover:scale-105 transition-all duration-200 cursor-pointer"
         >
           Continue to Login <FaArrowRight />
         </button>
@@ -178,7 +178,7 @@ function LandingPage() {
       {/* Track Attendance Modal */}
       {showTracker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-7 relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-5 sm:p-7 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={closeTracker}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -303,7 +303,7 @@ function LandingPage() {
       )}
 
       {/* Features */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-8 pb-16 max-w-3xl mx-auto w-full">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-8 pb-12 sm:pb-16 max-w-3xl mx-auto w-full">
         {[
           { icon: FaCamera,   title: "Scan & Track",    desc: "Mark attendance using School ID, LRN, or student name" },
           { icon: FaUsers,    title: "Manage Students",  desc: "Add, archive, and organize your student roster"    },

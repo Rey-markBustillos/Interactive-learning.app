@@ -93,9 +93,9 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
     selectedIds.size === studentList.filter((s) => s._id).length;
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6">
+    <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
       {/* ── Inner Navbar ── */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
           {view === "archived" ? (
             <><FaBoxOpen className="text-amber-500" /> Archived Students</>
@@ -104,7 +104,7 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
           )}
         </h2>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {view === "archived" ? (
             <button
               onClick={() => setView("active")}

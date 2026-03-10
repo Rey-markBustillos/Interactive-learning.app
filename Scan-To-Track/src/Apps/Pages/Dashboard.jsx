@@ -675,7 +675,7 @@ function Dashboard() {
       <SideNav active={activePage} onNavigate={setActivePage} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top navbar */}
-        <nav className="bg-white border-b border-gray-100 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-sm shrink-0">
+        <nav className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-sm shrink-0 gap-2">
           <div className="flex items-center gap-3">
             <div className="w-8 md:hidden" />
             <div className="flex items-center gap-3">
@@ -691,11 +691,11 @@ function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* User List button */}
             <button
               onClick={() => { setAdminError(""); setAdminCreds({ email: "", password: "" }); setAdminModal(true); }}
-              className="group flex items-center gap-2 bg-blue-50 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-200 hover:border-blue-600 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-blue-200"
+              className="group flex items-center gap-2 bg-blue-50 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-200 hover:border-blue-600 px-3 sm:px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-blue-200"
             >
               <FaUsers size={13} />
               <span className="hidden sm:inline">User List</span>
@@ -707,10 +707,10 @@ function Dashboard() {
                 localStorage.removeItem("user");
                 navigate("/");
               }}
-              className="group flex items-center gap-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 hover:border-red-600 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-red-200"
+              className="group flex items-center gap-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 hover:border-red-600 px-3 sm:px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-red-200"
             >
               <FaSignOutAlt size={13} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-              Logout
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </nav>
@@ -802,8 +802,8 @@ function Dashboard() {
           </div>
 
           {/* Table */}
-          <div className="overflow-y-auto flex-1">
-            <table className="w-full text-sm">
+          <div className="overflow-auto flex-1">
+            <table className="w-full min-w-190 text-sm">
               <thead className="sticky top-0 z-10">
                 <tr className="text-xs text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
                   <th className="px-5 py-3 text-left font-semibold">#</th>

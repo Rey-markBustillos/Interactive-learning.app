@@ -83,7 +83,7 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
 
   return (
     <div className="flex justify-center">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div className="w-full max-w-xs sm:max-w-xl bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="bg-red-100 text-[#8B1A1A] p-3 rounded-xl">
@@ -174,7 +174,7 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
             {/* File drop zone */}
             <div
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-gray-200 hover:border-[#8B1A1A] rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition group"
+              className="border-2 border-dashed border-gray-200 hover:border-[#8B1A1A] rounded-xl p-5 sm:p-8 flex flex-col items-center gap-3 cursor-pointer transition group"
             >
               <div className="bg-red-50 group-hover:bg-red-100 text-[#8B1A1A] p-4 rounded-full transition">
                 <FaUpload size={22} />

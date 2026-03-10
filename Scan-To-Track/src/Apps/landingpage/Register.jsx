@@ -104,7 +104,7 @@ function Register() {
       <div className="absolute inset-0 bg-black/55" />
 
       <div
-        className="relative z-10 rounded-3xl p-8 shadow-2xl border border-white/20 w-full max-w-md mx-4"
+        className="relative z-10 rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20 w-full max-w-xs sm:max-w-md mx-4"
         style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(18px)" }}
       >
 
@@ -116,7 +116,7 @@ function Register() {
                 <FaUserShield size={32} className="text-white" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-center text-white mb-1">Admin Verification</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-center text-white mb-1">Admin Verification</h1>
             <p className="text-center text-white/70 text-sm mb-6">Enter admin credentials to continue</p>
 
             <form onSubmit={handleAdminLogin} className="space-y-4">
@@ -167,7 +167,7 @@ function Register() {
               <FaArrowLeft size={12} /> Back to Dashboard
             </button>
 
-            <h1 className="text-3xl font-bold text-center text-white mb-2">Create Account</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-center text-white mb-2">Create Account</h1>
             <p className="text-center text-white/70 text-sm mb-8">Admin only — add a new user</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">

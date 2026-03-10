@@ -45,9 +45,9 @@ function Login() {
       <div className="absolute inset-0 bg-black/55" />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-md mx-4">
+      <div className="relative z-10 w-full max-w-xs sm:max-w-md mx-4">
         <div
-          className="rounded-3xl p-8 shadow-2xl border border-white/20"
+          className="rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20"
           style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(18px)" }}
         >
           {/* School branding */}
@@ -61,7 +61,7 @@ function Login() {
             <p className="text-white/60 text-xs mt-1">Attendance Tracking System</p>
           </div>
 
-          <h1 className="text-2xl font-bold text-center text-white mb-6">Welcome Back!</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-center text-white mb-6">Welcome Back!</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (

@@ -53,7 +53,7 @@ function AttendancePage({
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
         <div className="bg-linear-to-br from-[#8B1A1A] to-[#4a0a0a] rounded-2xl shadow-lg shadow-red-200 p-6 flex items-center gap-4">
           <div className="bg-white/20 text-white p-3.5 rounded-2xl shrink-0"><FaUsers size={24} /></div>
           <div>
@@ -91,7 +91,7 @@ function AttendancePage({
               <p className="text-gray-700 font-semibold text-base">Camera is ready</p>
               <p className="text-gray-400 text-sm mt-1">Press the button below to scan a student&apos;s LRN or name</p>
             </div>
-            <button onClick={startCamera} className="flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#6b1010] text-white px-10 py-3 rounded-xl font-semibold transition cursor-pointer shadow-lg shadow-red-200">
+            <button onClick={startCamera} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#8B1A1A] hover:bg-[#6b1010] text-white px-8 sm:px-10 py-3 rounded-xl font-semibold transition cursor-pointer shadow-lg shadow-red-200">
               <FaCamera /> Open Camera
             </button>
           </div>
@@ -123,13 +123,13 @@ function AttendancePage({
             </div>
             <canvas ref={canvasRef} className="hidden" />
             <div className="flex gap-3 w-full justify-center flex-wrap">
-              <button onClick={captureAndScan} disabled={processing} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-8 py-3 rounded-xl font-semibold transition cursor-pointer shadow">
+              <button onClick={captureAndScan} disabled={processing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-8 py-3 rounded-xl font-semibold transition cursor-pointer shadow">
                 {processing ? <><FaSync className="animate-spin" /> Reading...</> : <><FaCamera /> Capture &amp; Scan</>}
               </button>
-              <button onClick={switchCamera} disabled={processing} className="flex items-center gap-2 bg-[#8B1A1A] hover:bg-[#6b1010] disabled:bg-red-300 text-white px-5 py-3 rounded-xl font-semibold transition cursor-pointer shadow" title="Switch camera">
+              <button onClick={switchCamera} disabled={processing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#8B1A1A] hover:bg-[#6b1010] disabled:bg-red-300 text-white px-5 py-3 rounded-xl font-semibold transition cursor-pointer shadow" title="Switch camera">
                 <FaSyncAlt /> {facingMode === "environment" ? "Front Cam" : "Back Cam"}
               </button>
-              <button onClick={stopCamera} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition cursor-pointer shadow">
+              <button onClick={stopCamera} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition cursor-pointer shadow">
                 <FaStop /> Stop
               </button>
             </div>

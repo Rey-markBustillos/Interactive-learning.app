@@ -572,7 +572,7 @@ function TrackingPage() {
               </div>
 
               {/* Summary stats bar */}
-              <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50 shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-3 sm:divide-x divide-gray-100 bg-gray-50 shrink-0">
                 <div className="flex flex-col items-center py-3">
                   <span className="text-xl font-bold text-green-600">{secStudents.reduce((sum, s) => sum + (presentMap[s.lrn] || 0), 0)}</span>
                   <span className="text-xs text-gray-400 mt-0.5">Total Present</span>
@@ -588,8 +588,8 @@ function TrackingPage() {
               </div>
 
               {/* Student table */}
-              <div className="overflow-y-auto flex-1">
-                <table className="w-full text-sm">
+              <div className="overflow-auto flex-1">
+                <table className="w-full min-w-190 text-sm">
                   <thead className="sticky top-0 z-10">
                     <tr className="text-xs text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
                       <th className="px-5 py-3 text-left font-semibold">#</th>
@@ -644,7 +644,7 @@ function TrackingPage() {
               </div>
 
               {/* Modal footer — Export SF2 */}
-              <div className="shrink-0 px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+              <div className="shrink-0 px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <p className="text-xs text-gray-400">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""} in this section</p>
                 <button
                   onClick={(e) => { e.stopPropagation(); setSchoolInfo((prev) => ({ ...prev, section: sectionModal })); setSectionExportOpen(sectionModal); }}
@@ -673,8 +673,8 @@ function TrackingPage() {
               <button onClick={() => setSectionExportOpen(null)} className="text-white/70 hover:text-white cursor-pointer"><FaTimes size={16} /></button>
             </div>
 
-            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Month</label>
                   <select value={exportMonth} onChange={(e) => setExportMonth(Number(e.target.value))} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-300">
@@ -733,7 +733,7 @@ function TrackingPage() {
 
       {/* Per-subject summary cards */}
       {subjectCounts.length > 0 && (
-        <div className={`grid gap-4 ${subjectCounts.length === 1 ? "grid-cols-1 max-w-xs" : subjectCounts.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+        <div className={`grid gap-4 ${subjectCounts.length === 1 ? "grid-cols-1 max-w-xs" : subjectCounts.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
           {subjectCounts.map(({ subject, count }) => (
             <button
               key={subject}

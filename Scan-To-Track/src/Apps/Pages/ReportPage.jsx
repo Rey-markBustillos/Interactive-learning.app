@@ -2,10 +2,10 @@ import { FaSync, FaChartBar } from "react-icons/fa";
 
 function ReportPage({ reportDate, setReportDate, reportList, reportLoading, totalStudents }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-6">
+    <div className="bg-white rounded-2xl shadow p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h2 className="text-xl font-bold text-gray-700">Attendance Report</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <label className="text-sm text-gray-500 font-medium">Date:</label>
           <input
             type="date"
@@ -29,7 +29,7 @@ function ReportPage({ reportDate, setReportDate, reportList, reportLoading, tota
         </div>
       ) : (
         <>
-          <div className="flex gap-3 mb-5">
+          <div className="flex gap-3 mb-5 flex-wrap">
             <span className="bg-green-50 text-green-700 text-sm font-semibold px-4 py-1.5 rounded-full border border-green-200">
               Present: {reportList.length}
             </span>

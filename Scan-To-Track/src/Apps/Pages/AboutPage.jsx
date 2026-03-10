@@ -63,7 +63,7 @@ function AboutPage() {
     <div className="max-w-3xl mx-auto space-y-6">
 
       {/* Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#8B1A1A] via-[#7B0000] to-[#4a0a0a] p-8 text-white shadow-2xl shadow-red-300">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#8B1A1A] via-[#7B0000] to-[#4a0a0a] p-6 sm:p-8 text-white shadow-2xl shadow-red-300">
         {/* Decorative circles */}
         <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/5 rounded-full" />
         <div className="absolute -bottom-12 -left-8 w-40 h-40 bg-white/5 rounded-full" />
@@ -75,7 +75,7 @@ function AboutPage() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-3xl font-extrabold tracking-tight">Scan-to-Track</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Scan-to-Track</h1>
               <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full border border-white/20">v1.0.0</span>
             </div>
             <p className="text-red-200 text-base font-medium">Student Attendance System</p>
@@ -102,7 +102,7 @@ function AboutPage() {
           </div>
           <h2 className="text-base font-bold text-gray-800">School Information</h2>
         </div>
-        <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-5">
+        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
             { label: "School",      value: "Jose C. Payumo Memorial High School" },
             { label: "Section",     value: "Section Name Here" },
@@ -128,7 +128,7 @@ function AboutPage() {
           </div>
           <span className="text-xs text-gray-400">Place photos in <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">public/members/</code></span>
         </div>
-        <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-5">
+        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {members.map((m, i) => (
             <MemberCard key={i} member={m} isLead={i === 0} />
           ))}
