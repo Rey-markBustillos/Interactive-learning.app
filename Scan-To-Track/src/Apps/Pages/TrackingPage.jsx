@@ -660,7 +660,7 @@ function TrackingPage() {
 
       {/* ── SECTION EXPORT MODAL ── */}
       {sectionExportOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setSectionExportOpen(null)}>
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setSectionExportOpen(null)}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-linear-to-r from-emerald-600 to-green-600 px-6 py-5 flex items-center justify-between text-white">
               <div className="flex items-center gap-3">

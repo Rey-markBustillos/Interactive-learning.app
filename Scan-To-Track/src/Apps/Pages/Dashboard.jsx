@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Swal from 'sweetalert2';
-import { FaSignOutAlt } from "react-icons/fa";
+import { FaSignOutAlt, FaUsers, FaTimes, FaLock, FaEnvelope, FaShieldAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Tesseract from "tesseract.js";
 import SideNav from "../components/SideNav";
@@ -52,6 +52,15 @@ function Dashboard() {
   const [reportDate, setReportDate] = useState(() => localDate());
   const [reportList, setReportList] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
+
+  //  Admin / User List
+  const [adminModal, setAdminModal] = useState(false);
+  const [adminCreds, setAdminCreds] = useState({ email: "", password: "" });
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState("");
+  const [userListModal, setUserListModal] = useState(false);
+  const [userListData, setUserListData] = useState([]);
+  const [adminToken, setAdminToken] = useState("");
 
   const getToken = () => localStorage.getItem("token");
 
@@ -148,6 +157,7 @@ function Dashboard() {
         const offlineSaved = JSON.parse(localStorage.getItem(offlineKey()) || "[]");
         if (offlineSaved.length > 0) setAttendanceList(offlineSaved);
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   // Stop camera when leaving attendance page
@@ -272,8 +282,7 @@ function Dashboard() {
         return true;
       };
 
-      // Tokenize OCR text into words (raw and letter-normalized)
-      const ocrWords     = up.split(/[\s,.\-_|/\\:;]+/).filter((w) => w.length > 1);
+      // Tokenize OCR text into words (letter-normalized)
       const ocrWordsNorm = toLetters(up).split(/[\s,.\-_|/\\:;]+/).filter((w) => w.length > 1);
 
       // ── LRN matching ──────────────────────────────────────────────
@@ -445,26 +454,6 @@ function Dashboard() {
     return d;
   };
 
-  //  Delete Student
-  const handleDeleteStudent = async (id) => {
-    if (!window.confirm("Delete this student?")) return;
-    try {
-      const student = students.find((s) => s._id === id);
-      await fetch(`${API}/students/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      setStudents((prev) => prev.filter((s) => s._id !== id));
-      if (student) {
-        setAttendanceList((prev) => {
-          const updated = prev.filter((a) => a.lrn !== student.lrn);
-          localStorage.setItem(offlineKey(), JSON.stringify(updated));
-          return updated;
-        });
-      }
-    } catch { /* ignore */ }
-  };
-
   //  Bulk Delete Students
   const handleBulkDelete = async (ids) => {
     const toDelete = students.filter((s) => ids.includes(s._id));
@@ -545,6 +534,66 @@ function Dashboard() {
   const presentCount = attendanceList.length;
   const absentCount = totalStudents - presentCount;
 
+  //  Admin auth + user list handler
+  const handleAdminAuth = async (e) => {
+    e.preventDefault();
+    setAdminLoading(true);
+    setAdminError("");
+    try {
+      // Step 1: Login with provided credentials
+      const loginRes = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: adminCreds.email, password: adminCreds.password }),
+      });
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) { setAdminError(loginData.message || "Invalid credentials"); setAdminLoading(false); return; }
+      if (loginData.role !== "admin") { setAdminError("Access denied. Admin account required."); setAdminLoading(false); return; }
+
+      // Step 2: Fetch user list with admin token
+      const usersRes = await fetch(`${API}/auth/users`, {
+        headers: { Authorization: `Bearer ${loginData.token}` },
+      });
+      const usersData = await usersRes.json();
+      if (!usersRes.ok) { setAdminError(usersData.message || "Failed to load users"); setAdminLoading(false); return; }
+
+      setUserListData(usersData);
+      setAdminToken(loginData.token);
+      setAdminModal(false);
+      setUserListModal(true);
+      setAdminCreds({ email: "", password: "" });
+    } catch {
+      setAdminError("Connection error. Please try again.");
+    }
+    setAdminLoading(false);
+  };
+
+  const handleDeleteUser = async (user) => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Delete User?",
+      html: `Are you sure you want to delete <strong>${user.name}</strong>?<br/><span style="font-size:13px;color:#6b7280">${user.email}</span>`,
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`${API}/auth/users/${user._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { Swal.fire({ icon: "error", title: "Error", text: data.message || "Failed to delete user", confirmButtonColor: "#8B1A1A" }); return; }
+      setUserListData((prev) => prev.filter((u) => u._id !== user._id));
+      Swal.fire({ icon: "success", title: "Deleted!", text: `${user.name} has been removed.`, confirmButtonColor: "#1565C0", timer: 1800, timerProgressBar: true, showConfirmButton: false });
+    } catch {
+      Swal.fire({ icon: "error", title: "Connection Error", text: "Could not reach the server.", confirmButtonColor: "#8B1A1A" });
+    }
+  };
+
   const pageTitles = {
     "attendance": "Attendance Today",
     "add-student": "Add Student",
@@ -621,6 +670,7 @@ function Dashboard() {
   };
 
   return (
+    <>
     <div className="h-screen bg-slate-100 flex overflow-hidden">
       <SideNav active={activePage} onNavigate={setActivePage} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -641,18 +691,28 @@ function Dashboard() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => {
-              stopCamera();
-              localStorage.removeItem("token");
-              localStorage.removeItem("user");
-              navigate("/");
-            }}
-            className="group flex items-center gap-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 hover:border-red-600 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-red-200"
-          >
-            <FaSignOutAlt size={13} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            {/* User List button */}
+            <button
+              onClick={() => { setAdminError(""); setAdminCreds({ email: "", password: "" }); setAdminModal(true); }}
+              className="group flex items-center gap-2 bg-blue-50 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-200 hover:border-blue-600 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-blue-200"
+            >
+              <FaUsers size={13} />
+              <span className="hidden sm:inline">User List</span>
+            </button>
+            <button
+              onClick={() => {
+                stopCamera();
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                navigate("/");
+              }}
+              className="group flex items-center gap-2 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 hover:border-red-600 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-red-200"
+            >
+              <FaSignOutAlt size={13} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
+              Logout
+            </button>
+          </div>
         </nav>
         {/* Subject navbar badge (shows if a subject is selected) */}
         {selectedSubject && (
@@ -669,6 +729,134 @@ function Dashboard() {
         </main>
       </div>
     </div>
+
+    {/* ── ADMIN AUTH MODAL ── */}
+    {adminModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setAdminModal(false)}>
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="bg-linear-to-r from-[#1565C0] to-[#0D47A1] px-6 py-5 flex items-center justify-between text-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2.5 rounded-xl"><FaShieldAlt size={18} /></div>
+              <div>
+                <h2 className="font-bold text-base">Admin Verification</h2>
+                <p className="text-blue-200 text-xs">Enter admin credentials to continue</p>
+              </div>
+            </div>
+            <button onClick={() => setAdminModal(false)} className="text-white/70 hover:text-white cursor-pointer"><FaTimes size={16} /></button>
+          </div>
+
+          <form onSubmit={handleAdminAuth} className="p-6 space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Admin Email</label>
+              <div className="relative">
+                <FaEnvelope className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  value={adminCreds.email}
+                  onChange={(e) => setAdminCreds((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="Admin@jcp.edu.ph"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Password</label>
+              <div className="relative">
+                <FaLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
+                <input
+                  type="password"
+                  required
+                  value={adminCreds.password}
+                  onChange={(e) => setAdminCreds((p) => ({ ...p, password: e.target.value }))}
+                  placeholder="••••••••••••"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            {adminError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-2.5 rounded-xl">{adminError}</p>
+            )}
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={() => setAdminModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+              <button
+                type="submit"
+                disabled={adminLoading}
+                className="flex-1 py-2.5 rounded-xl bg-[#1565C0] hover:bg-[#0D47A1] disabled:bg-blue-300 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {adminLoading ? <><div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Verifying...</> : <><FaShieldAlt size={13} /> Verify & View</>}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* ── USER LIST MODAL ── */}
+    {userListModal && (
+      <div className="fixed inset-0 z-50 flex flex-col bg-white">
+        <div className="w-full h-full flex flex-col" onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="bg-linear-to-r from-[#1565C0] to-[#0D47A1] px-6 py-5 flex items-center justify-between text-white shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2.5 rounded-xl"><FaUsers size={18} /></div>
+              <div>
+                <h2 className="font-bold text-lg">All Users</h2>
+                <p className="text-blue-200 text-xs">{userListData.length} registered user{userListData.length !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+            <button onClick={() => setUserListModal(false)} className="text-white/70 hover:text-white cursor-pointer"><FaTimes size={18} /></button>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-y-auto flex-1">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="text-xs text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
+                  <th className="px-5 py-3 text-left font-semibold">#</th>
+                  <th className="px-5 py-3 text-left font-semibold">Name</th>
+                  <th className="px-5 py-3 text-left font-semibold">Email</th>
+                  <th className="px-5 py-3 text-left font-semibold">Role</th>
+                  <th className="px-5 py-3 text-left font-semibold">Joined</th>
+                  <th className="px-5 py-3 text-center font-semibold">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {userListData.map((u, i) => (
+                  <tr key={u._id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-linear-to-br from-[#1565C0] to-[#0D47A1] flex items-center justify-center text-white font-bold text-xs shrink-0">{u.name.charAt(0).toUpperCase()}</div>
+                        <span className="text-gray-800 font-semibold">{u.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-gray-500 text-xs font-mono">{u.email}</td>
+                    <td className="px-5 py-3">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ u.role === "admin" ? "bg-purple-50 text-purple-600 border border-purple-200" : "bg-blue-50 text-blue-600 border border-blue-200" }`}>{u.role}</span>
+                    </td>
+                    <td className="px-5 py-3 text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}</td>
+                    <td className="px-5 py-3 text-center">
+                      {u.role !== "admin" && (
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="inline-flex items-center gap-1.5 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-200 hover:border-red-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                        >
+                          <FaTimes size={10} /> Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
 

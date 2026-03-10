@@ -70,3 +70,26 @@ export const login = async (req, res, next) => {
 export const getMe = async (req, res) => {
   res.json(req.user);
 };
+
+// GET /api/auth/users  (admin only)
+export const getUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({}).select("-password").sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /api/auth/users/:id  (admin only)
+export const deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.role === "admin") return res.status(403).json({ message: "Cannot delete an admin account" });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -50,6 +50,7 @@ export const markAttendance = async (req, res, next) => {
       studentId: student.studentId,
       lrn: student.lrn,
       name: student.name,
+      section: student.section,
       date: populated.date,
       timeIn: populated.timeIn,
       status: populated.status,

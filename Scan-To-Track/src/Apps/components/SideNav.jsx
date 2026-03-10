@@ -76,6 +76,13 @@ function SideNav({ active, onNavigate }) {
                 {user.section && (
                   <p className="text-red-200 text-xs truncate mt-0.5">Section: {user.section}</p>
                 )}
+                {user.subjects && user.subjects.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {user.subjects.map((sub) => (
+                      <span key={sub} className="bg-white/20 text-white text-xs font-semibold px-2 py-0.5 rounded-full leading-tight">{sub}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

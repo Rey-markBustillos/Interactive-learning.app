@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUserAlt, FaEnvelope, FaLock, FaArrowLeft, FaUserShield, FaBook, FaPlus, FaTimes } from "react-icons/fa";
+import { FaUserAlt, FaEnvelope, FaLock, FaArrowLeft, FaUserShield, FaBook } from "react-icons/fa";
 
 function Register() {
   const navigate = useNavigate();
@@ -17,8 +17,7 @@ function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [subjects, setSubjects] = useState([]);
-  const [subjectInput, setSubjectInput] = useState("");
+  const [subject, setSubject] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,7 +74,7 @@ function Register() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ name, email, password, subjects }),
+        body: JSON.stringify({ name, email, password, subjects: subject.trim() ? [subject.trim()] : [] }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -83,8 +82,7 @@ function Register() {
       setName("");
       setEmail("");
       setPassword("");
-      setSubjects([]);
-      setSubjectInput("");
+      setSubject("");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -203,52 +201,19 @@ function Register() {
                 />
               </div>
 
-              {/* Subjects */}
+              {/* Subject */}
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Subjects</label>
-                <div className="flex gap-2 mb-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-3 text-gray-400"><FaBook size={13} /></span>
-                    <input
-                      type="text"
-                      value={subjectInput}
-                      onChange={(e) => setSubjectInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const t = subjectInput.trim();
-                          if (t && !subjects.includes(t)) setSubjects((p) => [...p, t]);
-                          setSubjectInput("");
-                        }
-                      }}
-                      placeholder="Add subject (e.g. Math)"
-                      className="w-full pl-9 pr-4 py-2.5 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition text-sm"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const t = subjectInput.trim();
-                      if (t && !subjects.includes(t)) setSubjects((p) => [...p, t]);
-                      setSubjectInput("");
-                    }}
-                    className="bg-[#8B1A1A] text-white px-3 py-2.5 rounded-xl hover:bg-[#6b1010] transition cursor-pointer"
-                  >
-                    <FaPlus size={13} />
-                  </button>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Subject</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-gray-400"><FaBook size={13} /></span>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Mathematics"
+                    className="w-full pl-9 pr-4 py-2.5 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition text-sm"
+                  />
                 </div>
-                {subjects.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {subjects.map((s) => (
-                      <span key={s} className="flex items-center gap-1.5 bg-red-50 text-[#8B1A1A] border border-red-200 px-3 py-1 rounded-full text-xs font-semibold">
-                        {s}
-                        <button type="button" onClick={() => setSubjects((p) => p.filter((x) => x !== s))} className="hover:text-red-700 cursor-pointer">
-                          <FaTimes size={10} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <button
