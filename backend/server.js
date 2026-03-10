@@ -92,6 +92,7 @@ app.get("/api/public/track", async (req, res) => {
   try {
     const { default: Student } = await import("./models/Student.js");
     const { default: Attendance } = await import("./models/Attendance.js");
+    const { default: User } = await import("./models/User.js");
     const lrn = (req.query.lrn || "").trim();
     if (!lrn) return res.status(400).json({ message: "LRN is required." });
     const students = await Student.find({ lrn });
@@ -99,20 +100,38 @@ app.get("/api/public/track", async (req, res) => {
     const student = students[0];
     const records = await Attendance.find({ student: student._id }).sort({ date: -1 });
 
-    // Group records by subject
+    // Get the teacher's subjects to pre-populate the subject list
+    const owner = await User.findById(student.owner).select("subjects");
+    const ownerSubjects = (owner?.subjects || []).filter(Boolean);
+
+    // Pre-populate map with teacher's subjects so they always appear
     const subjectMap = {};
+    ownerSubjects.forEach((sub) => { subjectMap[sub] = []; });
+
+    // Group records by their subject; skip records with no subject
     records.forEach((r) => {
-      const sub = r.subject || "General";
+      const sub = r.subject && r.subject.trim() ? r.subject.trim() : null;
+      if (!sub) return;
       if (!subjectMap[sub]) subjectMap[sub] = [];
       subjectMap[sub].push({ date: r.date, timeIn: r.timeIn, status: r.status });
     });
+
+    // Fallback: if teacher has no subjects set, show actual subjects from records
+    if (ownerSubjects.length === 0) {
+      records.forEach((r) => {
+        const sub = r.subject && r.subject.trim() ? r.subject.trim() : null;
+        if (!sub) return;
+        if (!subjectMap[sub]) subjectMap[sub] = [];
+        subjectMap[sub].push({ date: r.date, timeIn: r.timeIn, status: r.status });
+      });
+    }
 
     const subjects = Object.entries(subjectMap).map(([subject, recs]) => ({
       subject,
       present: recs.filter((r) => r.status === "Present").length,
       late:    recs.filter((r) => r.status === "Late").length,
       total:   recs.length,
-      records: recs.slice(0, 30), // latest 30 records per subject
+      records: recs.slice(0, 30),
     }));
 
     res.json({

@@ -202,30 +202,24 @@ function LandingPage() {
                 {/* Subject tabs */}
                 {trackResult.subjects && trackResult.subjects.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <FaBook size={11} className="text-[#8B1A1A]" /> Your Subjects
-                    </p>
-                    <div className="flex gap-2 flex-wrap">
-                      {trackResult.subjects.map((s) => (
-                        <button
-                          key={s.subject}
-                          onClick={() => setActiveSubject(s.subject)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer border shadow-sm ${
-                            activeSubject === s.subject
-                              ? "bg-[#8B1A1A] text-white border-[#8B1A1A] shadow-red-200"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-[#8B1A1A] hover:text-[#8B1A1A]"
-                          }`}
-                        >
-                          <FaBook size={11} /> {s.subject}
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                            activeSubject === s.subject
-                              ? "bg-white/20 text-white"
-                              : "bg-red-100 text-[#8B1A1A]"
-                          }`}>
-                            {s.total}
-                          </span>
-                        </button>
-                      ))}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={activeSubject}
+                        onChange={(e) => setActiveSubject(e.target.value)}
+                        className="w-full appearance-none bg-white border-2 border-red-200 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] cursor-pointer pr-9"
+                      >
+                        {trackResult.subjects.map((s) => (
+                          <option key={s.subject} value={s.subject}>
+                            {s.subject} ({s.total} day{s.total !== 1 ? "s" : ""})
+                          </option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8B1A1A]">
+                        <FaBook size={12} />
+                      </span>
                     </div>
                   </div>
                 )}
