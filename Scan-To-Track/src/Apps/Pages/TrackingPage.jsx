@@ -34,6 +34,12 @@ function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function isWeekendDate(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const day = new Date(y, m - 1, d).getDay();
+  return day === 0 || day === 6;
+}
+
 function TrackingPage() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -433,10 +439,11 @@ function TrackingPage() {
   const sectionList = Object.keys(sectionMap).sort();
 
   // Per-student attendance stats from all records (for modal)
-  const totalDays = new Set(records.map((r) => r.date)).size;
+  const totalDays = new Set(records.map((r) => r.date).filter((dateStr) => !isWeekendDate(dateStr))).size;
   const presentMap = {}; // lrn → count
   const lateMap = {};    // lrn → count
   records.forEach((r) => {
+    if (isWeekendDate(r.date)) return;
     if (r.status === "Late") lateMap[r.lrn] = (lateMap[r.lrn] || 0) + 1;
     else presentMap[r.lrn] = (presentMap[r.lrn] || 0) + 1;
   });

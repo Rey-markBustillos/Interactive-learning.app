@@ -19,6 +19,13 @@ const localDate = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const isWeekendDate = (dateStr) => {
+  if (!dateStr) return false;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const day = new Date(y, m - 1, d).getDay();
+  return day === 0 || day === 6;
+};
+
 function Dashboard() {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("attendance");
@@ -532,7 +539,7 @@ function Dashboard() {
   //  Stats
   const totalStudents = studentList.length;
   const presentCount = attendanceList.length;
-  const absentCount = totalStudents - presentCount;
+  const absentCount = isWeekendDate(localDate()) ? 0 : (totalStudents - presentCount);
 
   //  Admin auth + user list handler
   const handleAdminAuth = async (e) => {
