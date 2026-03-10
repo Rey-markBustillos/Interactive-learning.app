@@ -96,29 +96,29 @@ function SideNav({ active, onNavigate }) {
 
         {/* Nav items */}
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {navItems.map(({ key, label, desc, icon: Icon }) => (
+          {navItems.map((item) => (
             <button
-              key={key}
-              onClick={() => handleNav(key)}
+              key={item.key}
+              onClick={() => handleNav(item.key)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 cursor-pointer group
                 ${
-                  active === key
+                  active === item.key
                     ? "bg-white text-[#8B1A1A] shadow-lg shadow-red-900/30"
                     : "text-red-100 hover:bg-white/10 hover:text-white"
                 }`}
             >
               <div className={`p-1.5 rounded-lg shrink-0 transition-colors ${
-                active === key ? "bg-red-100 text-[#8B1A1A]" : "bg-white/10 text-red-200 group-hover:bg-white/20"
+                active === item.key ? "bg-red-100 text-[#8B1A1A]" : "bg-white/10 text-red-200 group-hover:bg-white/20"
               }`}>
-                <Icon size={14} />
+                <item.icon size={14} />
               </div>
               <div className="text-left">
-                <p className="leading-tight">{label}</p>
+                <p className="leading-tight">{item.label}</p>
                 <p className={`text-xs mt-0.5 ${
-                  active === key ? "text-red-400" : "text-red-400 group-hover:text-red-300"
-                }`}>{desc}</p>
+                  active === item.key ? "text-red-400" : "text-red-400 group-hover:text-red-300"
+                }`}>{item.desc}</p>
               </div>
-              {active === key && (
+              {active === item.key && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-red-400" />
               )}
             </button>
