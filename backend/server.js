@@ -97,10 +97,30 @@ app.get("/api/public/track", async (req, res) => {
     const students = await Student.find({ lrn });
     if (!students.length) return res.status(404).json({ message: "No student found with that LRN." });
     const student = students[0];
-    const records = await Attendance.find({ student: student._id });
-    const present = records.filter((r) => r.status === "Present").length;
-    const late    = records.filter((r) => r.status === "Late").length;
-    res.json({ name: student.name, lrn: student.lrn, present, late, total: records.length });
+    const records = await Attendance.find({ student: student._id }).sort({ date: -1 });
+
+    // Group records by subject
+    const subjectMap = {};
+    records.forEach((r) => {
+      const sub = r.subject || "General";
+      if (!subjectMap[sub]) subjectMap[sub] = [];
+      subjectMap[sub].push({ date: r.date, timeIn: r.timeIn, status: r.status });
+    });
+
+    const subjects = Object.entries(subjectMap).map(([subject, recs]) => ({
+      subject,
+      present: recs.filter((r) => r.status === "Present").length,
+      late:    recs.filter((r) => r.status === "Late").length,
+      total:   recs.length,
+      records: recs.slice(0, 30), // latest 30 records per subject
+    }));
+
+    res.json({
+      name: student.name,
+      lrn: student.lrn,
+      section: student.section,
+      subjects,
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error." });
   }

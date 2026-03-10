@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaGraduationCap, FaCamera, FaUsers, FaChartBar, FaArrowRight, FaSearch, FaTimes, FaCheckCircle, FaClock, FaCalendarAlt, FaUserPlus, FaDownload } from "react-icons/fa";
+import { FaGraduationCap, FaCamera, FaUsers, FaChartBar, FaArrowRight, FaSearch, FaTimes, FaCheckCircle, FaClock, FaCalendarAlt, FaDownload, FaBook } from "react-icons/fa";
 import schoolBg from "/school-bg.jpg";
 
 function LandingPage() {
@@ -10,6 +10,7 @@ function LandingPage() {
   const [trackLoading, setTrackLoading] = useState(false);
   const [trackResult, setTrackResult] = useState(null);
   const [trackError, setTrackError] = useState("");
+  const [activeSubject, setActiveSubject] = useState("");
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -48,6 +49,7 @@ function LandingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setTrackResult(data);
+      setActiveSubject(data.subjects?.[0]?.subject || "");
     } catch (err) {
       setTrackError(err.message);
     } finally {
@@ -60,6 +62,7 @@ function LandingPage() {
     setLrn("");
     setTrackResult(null);
     setTrackError("");
+    setActiveSubject("");
   };
 
   return (
@@ -149,7 +152,7 @@ function LandingPage() {
       {/* Track Attendance Modal */}
       {showTracker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-7 relative">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-7 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={closeTracker}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -189,26 +192,90 @@ function LandingPage() {
             </form>
 
             {trackResult && (
-              <div className="mt-5 bg-red-50 rounded-2xl p-4">
-                <p className="text-center font-bold text-[#8B1A1A] text-base mb-3">{trackResult.name}</p>
-                <p className="text-center text-gray-400 text-xs mb-4">LRN: {trackResult.lrn}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-green-100 rounded-xl p-3 text-center">
-                    <FaCheckCircle className="text-green-500 mx-auto mb-1" size={18} />
-                    <p className="text-2xl font-bold text-green-700">{trackResult.present}</p>
-                    <p className="text-xs text-green-600">Present</p>
-                  </div>
-                  <div className="bg-yellow-100 rounded-xl p-3 text-center">
-                    <FaClock className="text-yellow-500 mx-auto mb-1" size={18} />
-                    <p className="text-2xl font-bold text-yellow-700">{trackResult.late}</p>
-                    <p className="text-xs text-yellow-600">Late</p>
-                  </div>
-                  <div className="bg-red-100 rounded-xl p-3 text-center">
-                    <FaCalendarAlt className="text-[#8B1A1A] mx-auto mb-1" size={18} />
-                    <p className="text-2xl font-bold text-[#8B1A1A]">{trackResult.total}</p>
-                    <p className="text-xs text-red-700">Total Days</p>
-                  </div>
+              <div className="mt-5">
+                {/* Student info */}
+                <div className="bg-red-50 rounded-2xl p-4 mb-4 text-center">
+                  <p className="font-bold text-[#8B1A1A] text-base">{trackResult.name}</p>
+                  <p className="text-gray-400 text-xs mt-0.5">LRN: {trackResult.lrn}{trackResult.section ? ` · ${trackResult.section}` : ""}</p>
                 </div>
+
+                {/* Subject tabs */}
+                {trackResult.subjects && trackResult.subjects.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <FaBook size={11} className="text-[#8B1A1A]" /> Your Subjects
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {trackResult.subjects.map((s) => (
+                        <button
+                          key={s.subject}
+                          onClick={() => setActiveSubject(s.subject)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer border shadow-sm ${
+                            activeSubject === s.subject
+                              ? "bg-[#8B1A1A] text-white border-[#8B1A1A] shadow-red-200"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-[#8B1A1A] hover:text-[#8B1A1A]"
+                          }`}
+                        >
+                          <FaBook size={11} /> {s.subject}
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                            activeSubject === s.subject
+                              ? "bg-white/20 text-white"
+                              : "bg-red-100 text-[#8B1A1A]"
+                          }`}>
+                            {s.total}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Active subject stats + records */}
+                {trackResult.subjects && trackResult.subjects.map((s) =>
+                  s.subject !== activeSubject ? null : (
+                    <div key={s.subject}>
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        <div className="bg-green-100 rounded-xl p-3 text-center">
+                          <FaCheckCircle className="text-green-500 mx-auto mb-1" size={18} />
+                          <p className="text-2xl font-bold text-green-700">{s.present}</p>
+                          <p className="text-xs text-green-600">Present</p>
+                        </div>
+                        <div className="bg-yellow-100 rounded-xl p-3 text-center">
+                          <FaClock className="text-yellow-500 mx-auto mb-1" size={18} />
+                          <p className="text-2xl font-bold text-yellow-700">{s.late}</p>
+                          <p className="text-xs text-yellow-600">Late</p>
+                        </div>
+                        <div className="bg-red-100 rounded-xl p-3 text-center">
+                          <FaCalendarAlt className="text-[#8B1A1A] mx-auto mb-1" size={18} />
+                          <p className="text-2xl font-bold text-[#8B1A1A]">{s.total}</p>
+                          <p className="text-xs text-red-700">Total Days</p>
+                        </div>
+                      </div>
+                      {s.records && s.records.length > 0 && (
+                        <div className="bg-gray-50 rounded-2xl overflow-hidden">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-2 border-b border-gray-100">Recent Records</p>
+                          <div className="divide-y divide-gray-100 max-h-52 overflow-y-auto">
+                            {s.records.map((r, i) => (
+                              <div key={i} className="flex items-center justify-between px-4 py-2.5">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700">{r.date}</p>
+                                  <p className="text-xs text-gray-400">{r.timeIn}</p>
+                                </div>
+                                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                  r.status === "Late"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-green-100 text-green-700"
+                                }`}>
+                                  {r.status}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -221,13 +288,13 @@ function LandingPage() {
           { icon: FaCamera,   title: "Scan & Track",    desc: "Mark attendance using School ID, LRN, or student name" },
           { icon: FaUsers,    title: "Manage Students",  desc: "Add, archive, and organize your student roster"    },
           { icon: FaChartBar, title: "View Reports",     desc: "See attendance summaries and export records"        },
-        ].map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="bg-white/70 border border-red-100 rounded-2xl p-5 text-left shadow">
+        ].map((feat) => (
+          <div key={feat.title} className="bg-white/70 border border-red-100 rounded-2xl p-5 text-left shadow">
             <div className="bg-red-100 p-2.5 rounded-xl inline-block mb-3">
-              <Icon size={18} className="text-[#8B1A1A]" />
+              <feat.icon size={18} className="text-[#8B1A1A]" />
             </div>
-            <h3 className="text-[#8B1A1A] font-semibold text-sm mb-1">{title}</h3>
-            <p className="text-gray-500 text-xs">{desc}</p>
+            <h3 className="text-[#8B1A1A] font-semibold text-sm mb-1">{feat.title}</h3>
+            <p className="text-gray-500 text-xs">{feat.desc}</p>
           </div>
         ))}
       </section>
