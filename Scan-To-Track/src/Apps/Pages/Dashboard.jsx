@@ -714,15 +714,6 @@ function Dashboard() {
             </button>
           </div>
         </nav>
-        {/* Subject navbar badge (shows if a subject is selected) */}
-        {selectedSubject && (
-          <div className="w-full flex justify-center bg-white border-b border-gray-100 py-2 sticky top-14 z-10">
-            <span className="flex items-center gap-2 bg-[#8B1A1A] text-white px-4 py-1.5 rounded-xl text-sm font-semibold shadow-sm shadow-red-200">
-              <span className="inline-block"><svg width="14" height="14" fill="none" viewBox="0 0 20 20"><path fill="#fff" d="M4.5 3A2.5 2.5 0 0 0 2 5.5v9A2.5 2.5 0 0 0 4.5 17h11a2.5 2.5 0 0 0 2.5-2.5v-9A2.5 2.5 0 0 0 15.5 3h-11ZM4 5.5A.5.5 0 0 1 4.5 5h11a.5.5 0 0 1 .5.5V7H4V5.5ZM4 9h12v5.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V9Z"/></svg></span>
-              {selectedSubject}
-            </span>
-          </div>
-        )}
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-5 md:p-7">
           {renderPage()}

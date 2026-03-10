@@ -23,15 +23,6 @@ function AttendancePage({
   const subjectPresent = subjectList.length;
   return (
     <div className="space-y-6">
-      {/* Subject navbar badge (shows if a subject is selected) */}
-      {selectedSubject && (
-        <div className="w-full flex justify-center bg-white border-b border-gray-100 py-2 sticky top-0 z-10">
-          <span className="flex items-center gap-2 bg-[#8B1A1A] text-white px-4 py-1.5 rounded-xl text-sm font-semibold shadow-sm shadow-red-200">
-            <FaBook className="inline-block" size={13} />
-            {selectedSubject}
-          </span>
-        </div>
-      )}
       {/* Subject Selector */}
       {subjects && subjects.length > 0 && (
         <div className="bg-white rounded-2xl shadow p-4">
