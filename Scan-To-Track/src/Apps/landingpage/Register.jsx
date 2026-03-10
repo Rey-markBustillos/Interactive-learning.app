@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserAlt, FaEnvelope, FaLock, FaArrowLeft, FaUserShield, FaBook } from "react-icons/fa";
+import schoolBg from "/school-bg.jpg";
 
 function Register() {
   const navigate = useNavigate();
@@ -92,46 +93,58 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-red-50 via-rose-100 to-red-100">
-      <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center relative"
+      style={{
+        backgroundImage: `url(${schoolBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/55" />
+
+      <div
+        className="relative z-10 rounded-3xl p-8 shadow-2xl border border-white/20 w-full max-w-md mx-4"
+        style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(18px)" }}
+      >
 
         {!isAdmin ? (
           /* ── Step 1: Admin Login ── */
           <>
             <div className="flex justify-center mb-4">
-              <div className="bg-red-100 p-4 rounded-full">
-                <FaUserShield size={32} className="text-[#8B1A1A]" />
+              <div className="bg-white/20 p-4 rounded-full">
+                <FaUserShield size={32} className="text-white" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-center text-[#8B1A1A] mb-1">Admin Verification</h1>
-            <p className="text-center text-gray-400 text-sm mb-6">Enter admin credentials to continue</p>
+            <h1 className="text-2xl font-bold text-center text-white mb-1">Admin Verification</h1>
+            <p className="text-center text-white/70 text-sm mb-6">Enter admin credentials to continue</p>
 
             <form onSubmit={handleAdminLogin} className="space-y-4">
               {adminError && (
-                <div className="bg-red-100 text-red-700 px-4 py-3 rounded-xl text-sm text-center">
+                <div className="bg-red-500/20 border border-red-400/40 text-red-100 px-4 py-3 rounded-xl text-sm text-center">
                   {adminError}
                 </div>
               )}
 
               <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400"><FaEnvelope /></span>
+                <span className="absolute left-3 top-3 text-white/60"><FaEnvelope /></span>
                 <input
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="Admin email"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
                 />
               </div>
 
               <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400"><FaLock /></span>
+                <span className="absolute left-3 top-3 text-white/60"><FaLock /></span>
                 <input
                   type="password"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="Admin password"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
                 />
               </div>
 
@@ -149,54 +162,54 @@ function Register() {
           <>
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#8B1A1A] transition mb-6 cursor-pointer"
+              className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition mb-6 cursor-pointer"
             >
               <FaArrowLeft size={12} /> Back to Dashboard
             </button>
 
-            <h1 className="text-3xl font-bold text-center text-[#8B1A1A] mb-2">Create Account</h1>
-            <p className="text-center text-gray-400 text-sm mb-8">Admin only — add a new user</p>
+            <h1 className="text-3xl font-bold text-center text-white mb-2">Create Account</h1>
+            <p className="text-center text-white/70 text-sm mb-8">Admin only — add a new user</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-100 text-red-700 px-4 py-3 rounded-xl text-sm text-center">{error}</div>
+                <div className="bg-red-500/20 border border-red-400/40 text-red-100 px-4 py-3 rounded-xl text-sm text-center">{error}</div>
               )}
               {success && (
-                <div className="bg-green-100 text-green-700 px-4 py-3 rounded-xl text-sm text-center">{success}</div>
+                <div className="bg-green-500/20 border border-green-400/40 text-green-100 px-4 py-3 rounded-xl text-sm text-center">{success}</div>
               )}
 
               <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400"><FaUserAlt /></span>
+                <span className="absolute left-3 top-3 text-white/60"><FaUserAlt /></span>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter name"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
                   required
                 />
               </div>
 
               <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400"><FaEnvelope /></span>
+                <span className="absolute left-3 top-3 text-white/60"><FaEnvelope /></span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter email"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
                   required
                 />
               </div>
 
               <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400"><FaLock /></span>
+                <span className="absolute left-3 top-3 text-white/60"><FaLock /></span>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
                   required
                   minLength={6}
                 />
@@ -204,15 +217,15 @@ function Register() {
 
               {/* Subject */}
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Subject</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wider block mb-2">Subject</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-3 text-gray-400"><FaBook size={13} /></span>
+                  <span className="absolute left-3 top-3 text-white/60"><FaBook size={13} /></span>
                   <input
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="e.g. Mathematics"
-                    className="w-full pl-9 pr-4 py-2.5 border-2 border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] transition text-sm"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition text-sm"
                     required
                   />
                 </div>

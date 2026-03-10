@@ -74,8 +74,8 @@ function LandingPage() {
         backgroundPosition: "center",
       }}
     >
-      {/* Lighter white overlay on top of the image (reduced to 15%) */}
-      <div className="absolute inset-0 bg-white/15" />
+      {/* Dark overlay to match login page */}
+      <div className="absolute inset-0 bg-black/55" />
 
       {/* All content above the overlay */}
       <div className="relative z-10 flex flex-col min-h-screen">
@@ -100,7 +100,7 @@ function LandingPage() {
           </button>
           <button
             onClick={() => navigate("/register")}
-            className="text-sm bg-white text-[#8B1A1A] font-bold border border-[#8B1A1A] px-4 py-2 rounded-xl transition hover:bg-[#8B1A1A] hover:text-white hover:border-white cursor-pointer"
+            className="text-sm bg-white/15 text-white font-bold border border-white/30 px-4 py-2 rounded-xl transition hover:bg-white/25 cursor-pointer"
           >
             Register
           </button>
@@ -135,14 +135,14 @@ function LandingPage() {
 
         <button
           onClick={() => setShowTracker(true)}
-          className="flex items-center gap-3 bg-white/20 border border-white/50 text-[#8B1A1A] font-bold px-7 py-3.5 rounded-2xl text-base shadow hover:bg-white/30 transition-all duration-200 cursor-pointer mb-4"
+          className="flex items-center gap-3 bg-white/15 border border-white/30 text-white font-bold px-7 py-3.5 rounded-2xl text-base shadow hover:bg-white/25 transition-all duration-200 cursor-pointer mb-4"
         >
-          <FaSearch size={15} className="text-[#8B1A1A]" /> Track My Attendance
+          <FaSearch size={15} className="text-white" /> Track My Attendance
         </button>
 
         <button
           onClick={() => navigate("/login")}
-          className="flex items-center gap-3 bg-white text-[#8B1A1A] font-bold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-red-50 hover:scale-105 transition-all duration-200 cursor-pointer"
+          className="flex items-center gap-3 bg-[#8B1A1A] text-white font-bold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-[#a52020] hover:scale-105 transition-all duration-200 cursor-pointer"
         >
           Continue to Login <FaArrowRight />
         </button>
@@ -283,18 +283,21 @@ function LandingPage() {
           { icon: FaUsers,    title: "Manage Students",  desc: "Add, archive, and organize your student roster"    },
           { icon: FaChartBar, title: "View Reports",     desc: "See attendance summaries and export records"        },
         ].map((feat) => (
-          <div key={feat.title} className="bg-white/70 border border-red-100 rounded-2xl p-5 text-left shadow">
-            <div className="bg-red-100 p-2.5 rounded-xl inline-block mb-3">
-              <feat.icon size={18} className="text-[#8B1A1A]" />
+          <div
+            key={feat.title}
+            className="rounded-2xl p-5 text-left shadow border border-white/20 bg-white/10 backdrop-blur-md"
+          >
+            <div className="bg-white/15 p-2.5 rounded-xl inline-block mb-3">
+              <feat.icon size={18} className="text-white" />
             </div>
-            <h3 className="text-[#8B1A1A] font-semibold text-sm mb-1">{feat.title}</h3>
-            <p className="text-gray-500 text-xs">{feat.desc}</p>
+            <h3 className="text-white font-semibold text-sm mb-1">{feat.title}</h3>
+            <p className="text-white/70 text-xs">{feat.desc}</p>
           </div>
         ))}
       </section>
 
       {/* Footer */}
-      <footer className="text-center pb-6 text-gray-500 text-xs">
+      <footer className="text-center pb-6 text-white/70 text-xs">
         © 2026 Scan-to-Track · All rights reserved
       </footer>
       </div>
