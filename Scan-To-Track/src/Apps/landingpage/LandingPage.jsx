@@ -48,8 +48,34 @@ function LandingPage() {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/public/track?lrn=${encodeURIComponent(lrn.trim())}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      setTrackResult(data);
-      setActiveSubject(data.subjects?.[0]?.subject || "");
+
+      // Support both new API shape ({ subjects: [...] }) and old shape
+      // where totals/records may be returned at the root.
+      let normalizedSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+      if (normalizedSubjects.length === 0 && Array.isArray(data.records)) {
+        const present = Number.isFinite(data.present)
+          ? data.present
+          : data.records.filter((r) => r.status === "Present").length;
+        const late = Number.isFinite(data.late)
+          ? data.late
+          : data.records.filter((r) => r.status === "Late").length;
+
+        normalizedSubjects = [{
+          subject: data.subject || "All",
+          present,
+          late,
+          total: Number.isFinite(data.total) ? data.total : data.records.length,
+          records: data.records,
+        }];
+      }
+
+      const normalizedResult = {
+        ...data,
+        subjects: normalizedSubjects,
+      };
+
+      setTrackResult(normalizedResult);
+      setActiveSubject(normalizedSubjects[0]?.subject || "");
     } catch (err) {
       setTrackError(err.message);
     } finally {
@@ -209,7 +235,7 @@ function LandingPage() {
                       <select
                         value={activeSubject}
                         onChange={(e) => setActiveSubject(e.target.value)}
-                        className="w-full appearance-none bg-white border-2 border-red-200 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] cursor-pointer pr-9"
+                        className="w-full bg-white border-2 border-red-200 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] cursor-pointer"
                       >
                         {trackResult.subjects.map((s) => (
                           <option key={s.subject} value={s.subject}>
@@ -217,7 +243,7 @@ function LandingPage() {
                           </option>
                         ))}
                       </select>
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8B1A1A]">
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8B1A1A] hidden sm:block">
                         <FaBook size={12} />
                       </span>
                     </div>
