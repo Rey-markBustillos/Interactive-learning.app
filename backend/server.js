@@ -110,6 +110,24 @@ app.get("/api/public/track", async (req, res) => {
       .select("student owner subject date timeIn status")
       .sort({ date: -1, timeIn: -1 });
 
+    // Build class-day counts per teacher+subject from all attendance rows
+    // so we can estimate absences for the current student.
+    const classRows = await Attendance.find({ owner: { $in: ownerIds } })
+      .select("owner subject date");
+    const classDaySets = {};
+    classRows.forEach((r) => {
+      const oid = String(r.owner || "");
+      const subject = r.subject && r.subject.trim() ? r.subject.trim() : "All";
+      const key = `${oid}::${subject}`;
+      if (!classDaySets[key]) classDaySets[key] = new Set();
+      classDaySets[key].add(r.date);
+    });
+
+    const getClassDays = (ownerId, subject) => {
+      const key = `${ownerId}::${subject}`;
+      return classDaySets[key] ? classDaySets[key].size : 0;
+    };
+
     // key: ownerId::subject
     const bucket = {};
 
@@ -123,6 +141,8 @@ app.get("/api/public/track", async (req, res) => {
           present: 0,
           late: 0,
           total: 0,
+          classDays: getClassDays(ownerId, subject),
+          absent: 0,
           records: [],
         };
       }
@@ -145,6 +165,8 @@ app.get("/api/public/track", async (req, res) => {
             present: 0,
             late: 0,
             total: 0,
+            classDays: getClassDays(oid, s),
+            absent: 0,
             records: [],
           };
         }
@@ -159,6 +181,12 @@ app.get("/api/public/track", async (req, res) => {
         timeIn: r.timeIn,
         status: r.status || "Present",
       });
+    });
+
+    Object.values(bucket).forEach((b) => {
+      const classDays = Math.max(b.classDays || 0, b.total || 0);
+      b.classDays = classDays;
+      b.absent = Math.max(0, classDays - (b.total || 0));
     });
 
     const subjects = Object.values(bucket)

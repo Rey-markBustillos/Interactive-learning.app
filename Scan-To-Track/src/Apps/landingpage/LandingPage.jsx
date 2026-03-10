@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaGraduationCap, FaCamera, FaUsers, FaChartBar, FaArrowRight, FaSearch, FaTimes, FaCheckCircle, FaClock, FaCalendarAlt, FaDownload, FaBook } from "react-icons/fa";
+import { FaGraduationCap, FaCamera, FaUsers, FaChartBar, FaArrowRight, FaSearch, FaTimes, FaCheckCircle, FaClock, FaCalendarAlt, FaDownload, FaBook, FaTimesCircle } from "react-icons/fa";
 import schoolBg from "/school-bg.jpg";
 
 function LandingPage() {
@@ -65,6 +65,12 @@ function LandingPage() {
           present,
           late,
           total: Number.isFinite(data.total) ? data.total : data.records.length,
+          classDays: Number.isFinite(data.classDays)
+            ? data.classDays
+            : (Number.isFinite(data.total) ? data.total : data.records.length),
+          absent: Number.isFinite(data.absent)
+            ? data.absent
+            : Math.max(0, (Number.isFinite(data.classDays) ? data.classDays : (Number.isFinite(data.total) ? data.total : data.records.length)) - (Number.isFinite(data.total) ? data.total : data.records.length)),
           records: data.records,
         }];
       }
@@ -242,7 +248,7 @@ function LandingPage() {
                       >
                         {trackResult.subjects.map((s) => (
                           <option key={makeKey(s)} value={makeKey(s)}>
-                            {s.subject}{s.teacher ? ` · ${s.teacher}` : ""} ({s.total} day{s.total !== 1 ? "s" : ""})
+                            {s.subject}{s.teacher ? ` · ${s.teacher}` : ""} ({(s.classDays ?? s.total)} day{(s.classDays ?? s.total) !== 1 ? "s" : ""})
                           </option>
                         ))}
                       </select>
@@ -262,7 +268,7 @@ function LandingPage() {
                           Teacher: <span className="font-semibold text-[#8B1A1A]">{s.teacher}</span>
                         </p>
                       )}
-                      <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className="grid grid-cols-2 gap-2 mb-4">
                         <div className="bg-green-100 rounded-xl p-3 text-center">
                           <FaCheckCircle className="text-green-500 mx-auto mb-1" size={18} />
                           <p className="text-2xl font-bold text-green-700">{s.present}</p>
@@ -274,9 +280,14 @@ function LandingPage() {
                           <p className="text-xs text-yellow-600">Late</p>
                         </div>
                         <div className="bg-red-100 rounded-xl p-3 text-center">
+                          <FaTimesCircle className="text-red-500 mx-auto mb-1" size={18} />
+                          <p className="text-2xl font-bold text-red-700">{s.absent ?? 0}</p>
+                          <p className="text-xs text-red-700">Absent</p>
+                        </div>
+                        <div className="bg-red-100 rounded-xl p-3 text-center">
                           <FaCalendarAlt className="text-[#8B1A1A] mx-auto mb-1" size={18} />
-                          <p className="text-2xl font-bold text-[#8B1A1A]">{s.total}</p>
-                          <p className="text-xs text-red-700">Total Days</p>
+                          <p className="text-2xl font-bold text-[#8B1A1A]">{s.classDays ?? s.total}</p>
+                          <p className="text-xs text-red-700">Class Days</p>
                         </div>
                       </div>
                       {s.records && s.records.length > 0 && (
