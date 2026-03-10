@@ -95,54 +95,85 @@ app.get("/api/public/track", async (req, res) => {
     const { default: User } = await import("./models/User.js");
     const lrn = (req.query.lrn || "").trim();
     if (!lrn) return res.status(400).json({ message: "LRN is required." });
-    const students = await Student.find({ lrn });
+    const students = await Student.find({ lrn }).select("_id name lrn section owner");
     if (!students.length) return res.status(404).json({ message: "No student found with that LRN." });
-    const student = students[0];
-    const records = await Attendance.find({ student: student._id }).sort({ date: -1 });
 
-    // Get the teacher's subjects to pre-populate the subject list
-    const owner = await User.findById(student.owner).select("subjects");
-    const ownerSubjects = (owner?.subjects || []).filter(Boolean);
+    const studentIds = students.map((s) => s._id);
+    const ownerIds = [...new Set(students.map((s) => String(s.owner)))];
 
-    // Pre-populate map with teacher's subjects so they always appear
-    const subjectMap = {};
-    ownerSubjects.forEach((sub) => { subjectMap[sub] = []; });
+    const owners = await User.find({ _id: { $in: ownerIds } }).select("_id name subjects");
+    const ownerMap = Object.fromEntries(
+      owners.map((o) => [String(o._id), { name: o.name, subjects: o.subjects || [] }])
+    );
 
-    // Group records by their subject
-    records.forEach((r) => {
-      const sub = r.subject && r.subject.trim() ? r.subject.trim() : null;
-      if (sub) {
-        if (!subjectMap[sub]) subjectMap[sub] = [];
-        subjectMap[sub].push({ date: r.date, timeIn: r.timeIn, status: r.status });
-      } else {
-        // Records with no subject → put under "All" as fallback
-        if (!subjectMap["All"]) subjectMap["All"] = [];
-        subjectMap["All"].push({ date: r.date, timeIn: r.timeIn, status: r.status });
+    const records = await Attendance.find({ student: { $in: studentIds } })
+      .select("student owner subject date timeIn status")
+      .sort({ date: -1, timeIn: -1 });
+
+    // key: ownerId::subject
+    const bucket = {};
+
+    const pushBucket = (ownerId, subject, rec) => {
+      const key = `${ownerId}::${subject}`;
+      if (!bucket[key]) {
+        bucket[key] = {
+          ownerId,
+          teacher: ownerMap[ownerId]?.name || "Unknown Teacher",
+          subject,
+          present: 0,
+          late: 0,
+          total: 0,
+          records: [],
+        };
       }
+      bucket[key].records.push(rec);
+      bucket[key].total += 1;
+      if (rec.status === "Late") bucket[key].late += 1;
+      else bucket[key].present += 1;
+    };
+
+    // Pre-populate owner subjects so each teacher's subject appears even with zero records
+    ownerIds.forEach((oid) => {
+      const subs = (ownerMap[oid]?.subjects || []).filter(Boolean);
+      subs.forEach((s) => {
+        const key = `${oid}::${s}`;
+        if (!bucket[key]) {
+          bucket[key] = {
+            ownerId: oid,
+            teacher: ownerMap[oid]?.name || "Unknown Teacher",
+            subject: s,
+            present: 0,
+            late: 0,
+            total: 0,
+            records: [],
+          };
+        }
+      });
     });
 
-    // If teacher has named subjects but all records were empty-subject (old data),
-    // move the "All" bucket into the first named subject and remove "All"
-    if (ownerSubjects.length > 0 && subjectMap["All"]?.length > 0) {
-      const hasNamedRecords = ownerSubjects.some((s) => subjectMap[s]?.length > 0);
-      if (!hasNamedRecords) {
-        subjectMap[ownerSubjects[0]] = subjectMap["All"];
-        delete subjectMap["All"];
-      }
-    }
+    records.forEach((r) => {
+      const ownerId = String(r.owner || "");
+      const subject = r.subject && r.subject.trim() ? r.subject.trim() : "All";
+      pushBucket(ownerId, subject, {
+        date: r.date,
+        timeIn: r.timeIn,
+        status: r.status || "Present",
+      });
+    });
 
-    const subjects = Object.entries(subjectMap).map(([subject, recs]) => ({
-      subject,
-      present: recs.filter((r) => r.status === "Present").length,
-      late:    recs.filter((r) => r.status === "Late").length,
-      total:   recs.length,
-      records: recs.slice(0, 30),
-    }));
+    const subjects = Object.values(bucket)
+      .map((b) => ({ ...b, records: b.records.slice(0, 30) }))
+      .sort((a, b) => {
+        if (a.teacher !== b.teacher) return a.teacher.localeCompare(b.teacher);
+        return a.subject.localeCompare(b.subject);
+      });
+
+    const primary = students[0];
 
     res.json({
-      name: student.name,
-      lrn: student.lrn,
-      section: student.section,
+      name: primary.name,
+      lrn: primary.lrn,
+      section: primary.section,
       subjects,
     });
   } catch (err) {

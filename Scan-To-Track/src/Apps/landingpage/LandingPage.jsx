@@ -75,7 +75,7 @@ function LandingPage() {
       };
 
       setTrackResult(normalizedResult);
-      setActiveSubject(normalizedSubjects[0]?.subject || "");
+      setActiveSubject(normalizedSubjects[0] ? `${normalizedSubjects[0].teacher || ""}|${normalizedSubjects[0].subject || ""}` : "");
     } catch (err) {
       setTrackError(err.message);
     } finally {
@@ -90,6 +90,9 @@ function LandingPage() {
     setTrackError("");
     setActiveSubject("");
   };
+
+  // Unique key per teacher+subject so two different teachers can have the same subject name
+  const makeKey = (s) => `${s.teacher || ""}|${s.subject || ""}`;
 
   return (
     <div
@@ -238,8 +241,8 @@ function LandingPage() {
                         className="w-full bg-white border-2 border-red-200 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-[#8B1A1A] cursor-pointer"
                       >
                         {trackResult.subjects.map((s) => (
-                          <option key={s.subject} value={s.subject}>
-                            {s.subject} ({s.total} day{s.total !== 1 ? "s" : ""})
+                          <option key={makeKey(s)} value={makeKey(s)}>
+                            {s.subject}{s.teacher ? ` · ${s.teacher}` : ""} ({s.total} day{s.total !== 1 ? "s" : ""})
                           </option>
                         ))}
                       </select>
@@ -252,8 +255,13 @@ function LandingPage() {
 
                 {/* Active subject stats + records */}
                 {trackResult.subjects && trackResult.subjects.map((s) =>
-                  s.subject !== activeSubject ? null : (
-                    <div key={s.subject}>
+                  makeKey(s) !== activeSubject ? null : (
+                    <div key={makeKey(s)}>
+                      {s.teacher && (
+                        <p className="text-xs text-center text-gray-500 mb-3">
+                          Teacher: <span className="font-semibold text-[#8B1A1A]">{s.teacher}</span>
+                        </p>
+                      )}
                       <div className="grid grid-cols-3 gap-2 mb-4">
                         <div className="bg-green-100 rounded-xl p-3 text-center">
                           <FaCheckCircle className="text-green-500 mx-auto mb-1" size={18} />
