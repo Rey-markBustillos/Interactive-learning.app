@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const navItems = [
   { key: "attendance",    label: "Attendance Today", icon: FaCamera,        desc: "Scan & track" },
   { key: "add-student",   label: "Add Student",      icon: FaUserPlus,      desc: "Register new" },
-  { key: "tracking",      label: "Tracking",         icon: FaClipboardList, desc: "Scan history" },
+  { key: "tracking",      label: "Tracking & Sections", icon: FaClipboardList, desc: "Sections & records" },
   { key: "list-students", label: "List Students",    icon: FaUsers,         desc: "View all" },
   { key: "report",        label: "Report",           icon: FaChartBar,      desc: "View by date" },
   { key: "about",         label: "About",            icon: FaInfoCircle,    desc: "About this app" },

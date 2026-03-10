@@ -159,9 +159,9 @@ function AttendancePage({
             <p className="text-gray-400 text-sm">Open the camera and scan so the LRN and name are visible.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-96">
             <table className="w-full text-left">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr className="bg-slate-50 rounded-xl">
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase rounded-l-xl">#</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>

@@ -4,6 +4,7 @@ const studentSchema = new mongoose.Schema(
   {
     lrn: { type: String, required: true, trim: true },
     name: { type: String, required: true, trim: true },
+    section: { type: String, required: true, trim: true },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

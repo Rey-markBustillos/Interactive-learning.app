@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FaUserPlus, FaFileImport, FaUpload, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaUserPlus, FaFileImport, FaUpload, FaCheckCircle, FaTimesCircle, FaLayerGroup } from "react-icons/fa";
 import * as XLSX from "xlsx";
 
 function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStudent, handleBulkImport }) {
@@ -38,15 +38,20 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
       const keys = Object.keys(rows[0]);
       const lrnCol = findCol(keys, "lrn", "learner");
       const nameCol = findCol(keys, "name", "fullname", "studentname", "pupil");
+      const sectionCol = findCol(keys, "section", "class", "grade");
       if (!lrnCol || !nameCol) {
         setImportMsg({ text: `Could not find LRN or Name column. Columns in file: ${keys.join(", ")}`, type: "error" });
         return;
       }
+      if (!sectionCol) {
+        setImportMsg({ text: `Could not find a Section column. Add a "Section" column to your file. Columns found: ${keys.join(", ")}`, type: "error" });
+        return;
+      }
       const parsed = rows
-        .map((r) => ({ lrn: String(r[lrnCol]).trim(), name: String(r[nameCol]).trim() }))
-        .filter((r) => r.lrn && r.name && r.lrn !== "0" && r.lrn !== "");
+        .map((r) => ({ lrn: String(r[lrnCol]).trim(), name: String(r[nameCol]).trim(), section: String(r[sectionCol]).trim() }))
+        .filter((r) => r.lrn && r.name && r.section && r.lrn !== "0" && r.lrn !== "");
       if (parsed.length === 0) {
-        setImportMsg({ text: "No valid rows found after parsing.", type: "error" });
+        setImportMsg({ text: "No valid rows found after parsing. Make sure LRN, Name, and Section columns are all filled.", type: "error" });
         return;
       }
       setImportRows(parsed);
@@ -135,6 +140,20 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
                 value={addForm.name}
                 onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. Jose Rizal"
+                className="w-full px-4 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl focus:outline-none focus:border-[#8B1A1A] focus:bg-white transition text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5">
+                <FaLayerGroup className="inline mr-1.5 text-[#8B1A1A]" size={12} />
+                Section
+              </label>
+              <input
+                type="text"
+                value={addForm.section || ""}
+                onChange={(e) => setAddForm((f) => ({ ...f, section: e.target.value }))}
+                placeholder="e.g. Grade 10 - Rizal"
                 className="w-full px-4 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl focus:outline-none focus:border-[#8B1A1A] focus:bg-white transition text-sm"
                 required
               />

@@ -25,8 +25,8 @@ function Dashboard() {
 
   //  Current user (subjects)
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const userSubjects = currentUser.subjects || [];
-  const [selectedSubject, setSelectedSubject] = useState(userSubjects[0] || "");
+  const [userSubjects, setUserSubjects] = useState(currentUser.subjects || []);
+  const [selectedSubject, setSelectedSubject] = useState((currentUser.subjects || [])[0] || "");
 
   //  Shared data
   const [students, setStudents] = useState([]);
@@ -44,7 +44,7 @@ function Dashboard() {
   const streamRef = useRef(null);
 
   //  Add Student form state
-  const [addForm, setAddForm] = useState({ lrn: "", name: "" });
+  const [addForm, setAddForm] = useState({ lrn: "", name: "", section: "" });
   const [addMsg, setAddMsg] = useState({ text: "", type: "" });
   const [addLoading, setAddLoading] = useState(false);
 
@@ -107,8 +107,18 @@ function Dashboard() {
     Promise.all([
       fetch(`${API}/students`, { headers }).then((r) => r.json()),
       fetch(`${API}/attendance?date=${localDate()}`, { headers }).then((r) => r.json()),
+      fetch(`${API}/auth/me`, { headers }).then((r) => r.ok ? r.json() : null).catch(() => null),
     ])
-      .then(async ([s, a]) => {
+      .then(async ([s, a, me]) => {
+        // Refresh subjects from the DB — fixes stale localStorage (e.g. registered before subjects feature)
+        if (me && me._id) {
+          const stored = JSON.parse(localStorage.getItem("user") || "{}");
+          const freshUser = { ...stored, subjects: me.subjects || [] };
+          localStorage.setItem("user", JSON.stringify(freshUser));
+          const freshSubjects = me.subjects || [];
+          setUserSubjects(freshSubjects);
+          setSelectedSubject((prev) => prev || freshSubjects[0] || "");
+        }
         if (Array.isArray(s)) setStudents(s);
 
         // Sync any offline records FIRST so the subsequent fetch gets them all
@@ -414,7 +424,7 @@ function Dashboard() {
       const d = await res.json();
       if (!res.ok) { setAddMsg({ text: d.message, type: "error" }); setAddLoading(false); return; }
       setStudents((prev) => [...prev, d]);
-      setAddForm({ lrn: "", name: "" });
+      setAddForm({ lrn: "", name: "", section: "" });
       setAddMsg({ text: d.name + " added successfully!", type: "success" });
     } catch {
       setAddMsg({ text: "Server not reachable. Check backend.", type: "error" });
@@ -538,7 +548,7 @@ function Dashboard() {
   const pageTitles = {
     "attendance": "Attendance Today",
     "add-student": "Add Student",
-    "tracking": "Tracking",
+    "tracking": "Tracking & Sections",
     "list-students": "List Students",
     "report": "Report",
     "about": "About",
@@ -625,8 +635,8 @@ function Dashboard() {
                 <p className="text-xs text-gray-400 hidden sm:block">
                   {new Date().toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                 </p>
-                {currentUser.subjects && currentUser.subjects.length > 0 && (
-                  <p className="text-xs text-[#8B1A1A] font-semibold hidden sm:block">{currentUser.subjects.join(" · ")}</p>
+                {userSubjects.length > 0 && (
+                  <p className="text-xs text-[#8B1A1A] font-semibold hidden sm:block">{userSubjects.join(" · ")}</p>
                 )}
               </div>
             </div>
@@ -646,7 +656,7 @@ function Dashboard() {
         </nav>
         {/* Subject navbar badge (shows if a subject is selected) */}
         {selectedSubject && (
-          <div className="w-full flex justify-center bg-white border-b border-gray-100 py-2 sticky top-[56px] z-10">
+          <div className="w-full flex justify-center bg-white border-b border-gray-100 py-2 sticky top-14 z-10">
             <span className="flex items-center gap-2 bg-[#8B1A1A] text-white px-4 py-1.5 rounded-xl text-sm font-semibold shadow-sm shadow-red-200">
               <span className="inline-block"><svg width="14" height="14" fill="none" viewBox="0 0 20 20"><path fill="#fff" d="M4.5 3A2.5 2.5 0 0 0 2 5.5v9A2.5 2.5 0 0 0 4.5 17h11a2.5 2.5 0 0 0 2.5-2.5v-9A2.5 2.5 0 0 0 15.5 3h-11ZM4 5.5A.5.5 0 0 1 4.5 5h11a.5.5 0 0 1 .5.5V7H4V5.5ZM4 9h12v5.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V9Z"/></svg></span>
               {selectedSubject}

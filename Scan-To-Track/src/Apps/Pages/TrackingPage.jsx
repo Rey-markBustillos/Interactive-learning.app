@@ -2,7 +2,8 @@
 import XLSXStyle from "xlsx-js-style";
 import {
   FaSearch, FaCalendarAlt, FaClipboardList, FaClock,
-  FaTimes, FaFileExcel, FaBook, FaUserCheck,
+  FaTimes, FaFileExcel, FaBook, FaUserCheck, FaLayerGroup, FaUsers,
+  FaCheckCircle, FaTimesCircle,
 } from "react-icons/fa";
 
 const API = import.meta.env.VITE_API_URL;
@@ -39,6 +40,12 @@ function TrackingPage() {
   const [search, setSearch] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("sections"); // "sections" | "records"
+  const [sectionModal, setSectionModal] = useState(null); // section name or null
+
+  // Students (for section cards)
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
 
   // Current user
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -51,6 +58,8 @@ function TrackingPage() {
   const [exportMonth, setExportMonth] = useState(today.getMonth() + 1);
   const [exportYear, setExportYear] = useState(today.getFullYear());
   const [exportLoading, setExportLoading] = useState(false);
+  const [sectionExportOpen, setSectionExportOpen] = useState(null); // null | section name
+  const [sectionExportLoading, setSectionExportLoading] = useState(false);
   const [schoolInfo, setSchoolInfo] = useState({
     schoolName: "J. Payumo Jr. Memorial High School",
     schoolId: "30070",
@@ -63,6 +72,25 @@ function TrackingPage() {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(t);
   }, [search]);
+
+  // Fetch students for section cards
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setStudentsLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/students`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStudents(Array.isArray(data) ? data : []);
+        }
+      } catch { /* ignore */ }
+      setStudentsLoading(false);
+    };
+    fetchStudents();
+  }, []);
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
@@ -93,17 +121,18 @@ function TrackingPage() {
     fetchRecords();
   }, [fetchRecords]);
 
-  const handleExportSF2 = async () => {
-    setExportLoading(true);
+  const handleExportSF2 = async (filterSection = null) => {
+    if (filterSection) setSectionExportLoading(true); else setExportLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const monthStr = `${exportYear}-${String(exportMonth).padStart(2, "0")}`;
+      const monthStr = `${exportYear}-${String(exportMonth).padStart(2, "0")}`;  
 
       const [studRes, attRes] = await Promise.all([
         fetch(`${API}/students`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API}/attendance/all?month=${monthStr}`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
-      const students = await studRes.json();
+      const allStudents = await studRes.json();
+      const students = filterSection ? allStudents.filter((s) => s.section === filterSection) : allStudents;
       const attendance = await attRes.json();
 
       const weekdays = getWeekdays(exportYear, exportMonth);
@@ -384,15 +413,34 @@ function TrackingPage() {
 
       const wb = XLSXStyle.utils.book_new();
       XLSXStyle.utils.book_append_sheet(wb, ws, monthName);
-      XLSXStyle.writeFile(wb, `SF2_${monthStr}_${schoolInfo.section.replace(/\s+/g, "_")}.xlsx`);
-      setExportOpen(false);
+      XLSXStyle.writeFile(wb, `SF2_${monthStr}_${(filterSection || schoolInfo.section).replace(/\s+/g, "_")}.xlsx`);
+      if (filterSection) setSectionExportOpen(null); else setExportOpen(false);
     } catch (err) {
       console.error(err);
       alert("Export failed. Make sure the backend is running.");
     } finally {
-      setExportLoading(false);
+      if (filterSection) setSectionExportLoading(false); else setExportLoading(false);
     }
   };
+
+  // Group students by section
+  const sectionMap = students.reduce((acc, s) => {
+    const sec = (s.section || "No Section").trim();
+    if (!acc[sec]) acc[sec] = [];
+    acc[sec].push(s);
+    return acc;
+  }, {});
+  const sectionList = Object.keys(sectionMap).sort();
+
+  // Per-student attendance stats from all records (for modal)
+  const totalDays = new Set(records.map((r) => r.date)).size;
+  const presentMap = {}; // lrn → count
+  const lateMap = {};    // lrn → count
+  records.forEach((r) => {
+    if (r.status === "Late") lateMap[r.lrn] = (lateMap[r.lrn] || 0) + 1;
+    else presentMap[r.lrn] = (presentMap[r.lrn] || 0) + 1;
+  });
+  const getAbsent = (lrn) => totalDays - (presentMap[lrn] || 0) - (lateMap[lrn] || 0);
 
   // Group records by date (filtered by selected subject)
   const filteredRecords = selectedSubject
@@ -420,6 +468,268 @@ function TrackingPage() {
 
   return (
     <div className="space-y-5">
+
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-white border border-gray-100 rounded-2xl p-1.5 shadow-sm">
+        <button
+          onClick={() => setActiveTab("sections")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+            activeTab === "sections"
+              ? "bg-[#8B1A1A] text-white shadow-sm"
+              : "text-gray-500 hover:text-[#8B1A1A] hover:bg-red-50"
+          }`}
+        >
+          <FaLayerGroup size={13} /> Sections
+        </button>
+        <button
+          onClick={() => setActiveTab("records")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+            activeTab === "records"
+              ? "bg-[#8B1A1A] text-white shadow-sm"
+              : "text-gray-500 hover:text-[#8B1A1A] hover:bg-red-50"
+          }`}
+        >
+          <FaClipboardList size={13} /> Tracking & Records
+        </button>
+      </div>
+
+      {/* ── SECTIONS TAB ── */}
+      {activeTab === "sections" && (
+        <div className="space-y-4">
+          {studentsLoading ? (
+            <div className="flex items-center justify-center py-20 text-gray-400">
+              <div className="animate-spin w-6 h-6 border-2 border-[#8B1A1A] border-t-transparent rounded-full mr-3" />
+              Loading sections...
+            </div>
+          ) : sectionList.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
+              <FaLayerGroup size={36} className="mx-auto text-gray-200 mb-3" />
+              <p className="text-gray-400 font-medium">No students added yet</p>
+              <p className="text-gray-300 text-sm mt-1">Go to Add Student to register students with their section</p>
+            </div>
+          ) : (
+            sectionList.map((section) => {
+              const secStudents = sectionMap[section];
+              return (
+                <button
+                  key={section}
+                  onClick={() => setSectionModal(section)}
+                  className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:border-red-200 transition-all cursor-pointer text-left"
+                >
+                  {/* Section header */}
+                  <div className="bg-linear-to-r from-[#8B1A1A] to-[#4a0a0a] px-5 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/20 p-2 rounded-xl">
+                        <FaLayerGroup size={16} className="text-white" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-base">{section}</p>
+                        <p className="text-red-200 text-xs">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""} — tap to view</p>
+                      </div>
+                    </div>
+                    <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                      <FaUsers size={11} /> {secStudents.length}
+                    </div>
+                  </div>
+                  {/* Preview row */}
+                  <div className="px-5 py-3 flex items-center gap-2 flex-wrap">
+                    {secStudents.slice(0, 5).map((s) => (
+                      <span key={s._id} className="w-7 h-7 rounded-full bg-red-100 text-[#8B1A1A] flex items-center justify-center font-bold text-xs" title={s.name}>
+                        {s.name.charAt(0)}
+                      </span>
+                    ))}
+                    {secStudents.length > 5 && (
+                      <span className="text-xs text-gray-400">+{secStudents.length - 5} more</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── SECTION DETAIL MODAL ── */}
+      {sectionModal && (() => {
+        const secStudents = sectionMap[sectionModal] || [];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setSectionModal(null)}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+              {/* Modal header */}
+              <div className="bg-linear-to-r from-[#8B1A1A] to-[#4a0a0a] px-6 py-5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2.5 rounded-xl">
+                    <FaLayerGroup size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-white font-bold text-lg">{sectionModal}</h2>
+                    <p className="text-red-200 text-xs">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSectionModal(null)} className="text-white/70 hover:text-white transition cursor-pointer">
+                  <FaTimes size={18} />
+                </button>
+              </div>
+
+              {/* Summary stats bar */}
+              <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50 shrink-0">
+                <div className="flex flex-col items-center py-3">
+                  <span className="text-xl font-bold text-green-600">{secStudents.reduce((sum, s) => sum + (presentMap[s.lrn] || 0), 0)}</span>
+                  <span className="text-xs text-gray-400 mt-0.5">Total Present</span>
+                </div>
+                <div className="flex flex-col items-center py-3">
+                  <span className="text-xl font-bold text-orange-500">{secStudents.reduce((sum, s) => sum + (lateMap[s.lrn] || 0), 0)}</span>
+                  <span className="text-xs text-gray-400 mt-0.5">Total Late</span>
+                </div>
+                <div className="flex flex-col items-center py-3">
+                  <span className="text-xl font-bold text-red-500">{secStudents.reduce((sum, s) => sum + Math.max(0, getAbsent(s.lrn)), 0)}</span>
+                  <span className="text-xs text-gray-400 mt-0.5">Total Absent</span>
+                </div>
+              </div>
+
+              {/* Student table */}
+              <div className="overflow-y-auto flex-1">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="text-xs text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
+                      <th className="px-5 py-3 text-left font-semibold">#</th>
+                      <th className="px-5 py-3 text-left font-semibold">LRN</th>
+                      <th className="px-5 py-3 text-left font-semibold">Name</th>
+                      <th className="px-5 py-3 text-left font-semibold">Section</th>
+                      <th className="px-5 py-3 text-center font-semibold text-green-600">Present</th>
+                      <th className="px-5 py-3 text-center font-semibold text-orange-500">Late</th>
+                      <th className="px-5 py-3 text-center font-semibold text-red-500">Absent</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {secStudents.map((s, i) => {
+                      const p = presentMap[s.lrn] || 0;
+                      const l = lateMap[s.lrn] || 0;
+                      const a = Math.max(0, getAbsent(s.lrn));
+                      return (
+                        <tr key={s._id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
+                          <td className="px-5 py-3 text-gray-500 font-mono text-xs">{s.lrn}</td>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-linear-to-br from-[#8B1A1A] to-[#4a0a0a] flex items-center justify-center text-white font-bold text-xs shrink-0">
+                                {s.name.charAt(0)}
+                              </div>
+                              <span className="text-gray-800 font-semibold">{s.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3">
+                            <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
+                          </td>
+                          <td className="px-5 py-3 text-center">
+                            <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                              <FaCheckCircle size={10} /> {p}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-center">
+                            <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                              <FaClock size={10} /> {l}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-center">
+                            <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                              <FaTimesCircle size={10} /> {a}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal footer — Export SF2 */}
+              <div className="shrink-0 px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                <p className="text-xs text-gray-400">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""} in this section</p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSchoolInfo((prev) => ({ ...prev, section: sectionModal })); setSectionExportOpen(sectionModal); }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm"
+                >
+                  <FaFileExcel size={13} /> Export SF2
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── SECTION EXPORT MODAL ── */}
+      {sectionExportOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setSectionExportOpen(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-linear-to-r from-emerald-600 to-green-600 px-6 py-5 flex items-center justify-between text-white">
+              <div className="flex items-center gap-3">
+                <FaFileExcel size={22} />
+                <div>
+                  <h2 className="font-bold text-base">Export SF2 — {sectionExportOpen}</h2>
+                  <p className="text-emerald-100 text-xs">DepEd Daily Attendance Report</p>
+                </div>
+              </div>
+              <button onClick={() => setSectionExportOpen(null)} className="text-white/70 hover:text-white cursor-pointer"><FaTimes size={16} /></button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Month</label>
+                  <select value={exportMonth} onChange={(e) => setExportMonth(Number(e.target.value))} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                    {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Year</label>
+                  <input type="number" value={exportYear} onChange={(e) => setExportYear(Number(e.target.value))} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">School Information</p>
+                {[
+                  { key: "schoolName", label: "Name of School" },
+                  { key: "schoolId",   label: "School ID" },
+                  { key: "schoolYear", label: "School Year" },
+                  { key: "gradeLevel", label: "Grade Level" },
+                  { key: "section",    label: "Section" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="mb-3">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">{label}</label>
+                    <input
+                      type="text"
+                      value={schoolInfo[key]}
+                      onChange={(e) => setSchoolInfo((prev) => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setSectionExportOpen(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">Cancel</button>
+                <button
+                  onClick={() => handleExportSF2(sectionExportOpen)}
+                  disabled={sectionExportLoading}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {sectionExportLoading ? (
+                    <><div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Generating...</>
+                  ) : (
+                    <><FaFileExcel size={13} /> Download .xlsx</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RECORDS TAB ── */}
+      {activeTab === "records" && (
+        <div className="space-y-5">
 
       {/* Per-subject summary cards */}
       {subjectCounts.length > 0 && (
@@ -717,6 +1027,9 @@ function TrackingPage() {
           </div>
         </div>
       )}
+        </div>
+      )}
+
     </div>
   );
 }

@@ -184,6 +184,7 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase rounded-l-xl">#</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Section</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase rounded-r-xl">Action</th>
                 </tr>
               </thead>
@@ -193,6 +194,13 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
                     <td className="px-4 py-3 text-gray-400 text-sm">{i + 1}</td>
                     <td className="px-4 py-3 text-gray-600 font-mono text-sm">{s.lrn}</td>
                     <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{s.name}</td>
+                    <td className="px-4 py-3">
+                      {s.section ? (
+                        <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       {s._id && (
                         <button
@@ -236,6 +244,7 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
                 <th className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase ${!selectMode ? "rounded-l-xl" : ""}`}>#</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
                 <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Section</th>
                 <th className="px-4 py-3 text-xs font-semibold text-green-600 uppercase text-center">Present</th>
                 <th className="px-4 py-3 text-xs font-semibold text-amber-500 uppercase text-center">Late</th>
                 <th className={`px-4 py-3 text-xs font-semibold text-red-400 uppercase text-center ${!selectMode ? "rounded-r-xl" : ""}`}>Absent</th>
@@ -268,6 +277,13 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
                   <td className="px-4 py-3 text-gray-400 text-sm">{i + 1}</td>
                   <td className="px-4 py-3 text-gray-600 font-mono text-sm">{s.lrn}</td>
                   <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{s.name}</td>
+                  <td className="px-4 py-3">
+                    {s.section ? (
+                      <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
+                    ) : (
+                      <span className="text-gray-300 text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full">
                       <FaCheckCircle size={11} /> {presentMap[s.lrn] || 0}
