@@ -40,6 +40,43 @@ function isWeekendDate(dateStr) {
   return day === 0 || day === 6;
 }
 
+function normalizeSectionKey(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function formatDisplayTime(value) {
+  const m = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return value || "--";
+  const h24 = Number(m[1]);
+  const mins = m[2];
+  const suffix = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 || 12;
+  return `${String(h12).padStart(2, "0")}:${mins} ${suffix}`;
+}
+
+function getSectionSchedule(section) {
+  return {
+    presentStart: section?.presentStart || "",
+    presentEnd: section?.presentEnd || "",
+    lateStart: section?.lateStart || "",
+    lateEnd: section?.lateEnd || "",
+    // Fallback for legacy sections that only have timeIn/timeOut.
+    legacyStart: section?.timeIn || "",
+    legacyEnd: section?.timeOut || "",
+  };
+}
+
+function getSectionScheduleText(section) {
+  const sched = getSectionSchedule(section);
+  if (sched.presentStart && sched.presentEnd && sched.lateStart && sched.lateEnd) {
+    return `Present: ${formatDisplayTime(sched.presentStart)}-${formatDisplayTime(sched.presentEnd)} | Late: ${formatDisplayTime(sched.lateStart)}-${formatDisplayTime(sched.lateEnd)}`;
+  }
+  if (sched.legacyStart || sched.legacyEnd) {
+    return `${formatDisplayTime(sched.legacyStart)} - ${formatDisplayTime(sched.legacyEnd)}`;
+  }
+  return "Schedule not set";
+}
+
 function TrackingPage() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -74,6 +111,40 @@ function TrackingPage() {
     section: "STEM 202",
   });
 
+  const [sections, setSections] = useState([]);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
+  const [addSectionForm, setAddSectionForm] = useState({
+    name: "",
+    assignedTeacherEmail: "",
+    subject: "",
+    presentStart: "",
+    presentEnd: "",
+    lateStart: "",
+    lateEnd: "",
+  });
+  const [addSectionLoading, setAddSectionLoading] = useState(false);
+  const [addSectionMsg, setAddSectionMsg] = useState({ text: "", type: "" });
+  const [registeredTeachers, setRegisteredTeachers] = useState([]);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+  const isSectionAdmin = (currentUser.email || "").toLowerCase() === "admin@jcp.edu.ph";
+
+  const selectedTeacherEmail = String(addSectionForm.assignedTeacherEmail || "").toLowerCase();
+  const selectedTeacher = registeredTeachers.find((t) => String(t.email || "").toLowerCase() === selectedTeacherEmail);
+  const selectedTeacherSubjects = Array.from(
+    new Set([
+      ...(Array.isArray(selectedTeacher?.subjects) ? selectedTeacher.subjects : []),
+      ...sections
+        .filter((s) => String(s.assignedTeacherEmail || "").toLowerCase() === selectedTeacherEmail)
+        .map((s) => String(s.subject || "").trim()),
+    ].map((s) => String(s || "").trim()).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+  const sectionNameOptions = Array.from(
+    new Set([
+      ...sections.map((s) => String(s.name || "").trim()),
+      ...students.map((s) => String(s.section || "").trim()),
+    ].filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(t);
@@ -97,6 +168,109 @@ function TrackingPage() {
     };
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    const fetchSections = async () => {
+      setSectionsLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/sections`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSections(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        setSections([]);
+      } finally {
+        setSectionsLoading(false);
+      }
+    };
+    fetchSections();
+  }, []);
+
+  useEffect(() => {
+    const fetchRegisteredTeachers = async () => {
+      if (!isSectionAdmin) return;
+      setTeachersLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/auth/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          setRegisteredTeachers([]);
+          return;
+        }
+        const data = await res.json();
+        const teachers = Array.isArray(data)
+          ? data.filter((u) => u.role !== "admin").map((u) => ({
+              _id: u._id,
+              name: u.name || u.email,
+              email: u.email || "",
+              subjects: Array.isArray(u.subjects) ? u.subjects : [],
+            }))
+          : [];
+        setRegisteredTeachers(teachers);
+      } catch {
+        setRegisteredTeachers([]);
+      } finally {
+        setTeachersLoading(false);
+      }
+    };
+
+    fetchRegisteredTeachers();
+  }, [isSectionAdmin]);
+
+  const handleAddSection = async (e) => {
+    e.preventDefault();
+    setAddSectionMsg({ text: "", type: "" });
+
+    if (
+      !addSectionForm.name.trim() ||
+      !addSectionForm.assignedTeacherEmail.trim() ||
+      !addSectionForm.subject.trim() ||
+      !addSectionForm.presentStart ||
+      !addSectionForm.presentEnd ||
+      !addSectionForm.lateStart ||
+      !addSectionForm.lateEnd
+    ) {
+      setAddSectionMsg({ text: "Please fill all fields.", type: "error" });
+      return;
+    }
+
+    setAddSectionLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/sections`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(addSectionForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to add section.");
+
+      setSections((prev) => [...prev, data]);
+      setAddSectionForm({
+        name: "",
+        assignedTeacherEmail: "",
+        subject: "",
+        presentStart: "",
+        presentEnd: "",
+        lateStart: "",
+        lateEnd: "",
+      });
+      setAddSectionMsg({ text: "Section added successfully.", type: "success" });
+    } catch (err) {
+      setAddSectionMsg({ text: err.message || "Failed to add section.", type: "error" });
+    } finally {
+      setAddSectionLoading(false);
+    }
+  };
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
@@ -436,7 +610,31 @@ function TrackingPage() {
     acc[sec].push(s);
     return acc;
   }, {});
-  const sectionList = Object.keys(sectionMap).sort();
+
+  const sectionInfoMap = sections.reduce((acc, s) => {
+    acc[normalizeSectionKey(s.name)] = s;
+    return acc;
+  }, {});
+
+  const sectionList = Array.from(
+    new Set([...Object.keys(sectionMap), ...sections.map((s) => String(s.name || "").trim()).filter(Boolean)])
+  ).sort((a, b) => a.localeCompare(b));
+
+  const teacherAssignmentMap = sections.reduce((acc, section) => {
+    const key = String(section.assignedTeacherEmail || section.assignedTeacher || "").toLowerCase();
+    if (!key) return acc;
+    if (!acc[key]) {
+      acc[key] = {
+        name: section.assignedTeacher || section.assignedTeacherEmail,
+        email: section.assignedTeacherEmail || "",
+        items: [],
+      };
+    }
+    acc[key].items.push(section);
+    return acc;
+  }, {});
+
+  const teacherAssignments = Object.values(teacherAssignmentMap).sort((a, b) => a.name.localeCompare(b.name));
 
   // Per-student attendance stats from all records (for modal)
   const totalDays = new Set(records.map((r) => r.date).filter((dateStr) => !isWeekendDate(dateStr))).size;
@@ -503,7 +701,176 @@ function TrackingPage() {
       {/* ── SECTIONS TAB ── */}
       {activeTab === "sections" && (
         <div className="space-y-4">
-          {studentsLoading ? (
+          {isSectionAdmin && (
+            <form onSubmit={handleAddSection} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">Add Section</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Visible only to admin@jcp.edu.ph</p>
+              </div>
+
+              {addSectionMsg.text && (
+                <div className={`px-3 py-2 rounded-xl text-xs font-medium ${addSectionMsg.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                  {addSectionMsg.text}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  list="section-name-options"
+                  value={addSectionForm.name}
+                  onChange={(e) => setAddSectionForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Select or type Section Name"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                  required
+                />
+                <datalist id="section-name-options">
+                  {sectionNameOptions.map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Section options are based on existing section and student records.
+                </p>
+                <select
+                  value={addSectionForm.assignedTeacherEmail}
+                  onChange={(e) => {
+                    const teacherEmail = e.target.value;
+                    setAddSectionForm((prev) => ({ ...prev, assignedTeacherEmail: teacherEmail, subject: "" }));
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                  required
+                >
+                  <option value="" disabled>
+                    {teachersLoading ? "Loading teachers..." : "Assign Teacher"}
+                  </option>
+                  {registeredTeachers.map((t) => (
+                    <option key={t._id} value={t.email}>
+                      {t.name}{t.email ? ` (${t.email})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Subject</label>
+                  <select
+                    value={addSectionForm.subject}
+                    onChange={(e) => setAddSectionForm((prev) => ({ ...prev, subject: e.target.value }))}
+                    disabled={!selectedTeacherEmail || selectedTeacherSubjects.length === 0}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    required
+                  >
+                    <option value="" disabled>
+                      {!selectedTeacherEmail
+                        ? "Select teacher first"
+                        : selectedTeacherSubjects.length > 0
+                          ? "Select Subject"
+                          : "No subject option available"}
+                    </option>
+                    {selectedTeacherSubjects.map((subj) => (
+                      <option key={subj} value={subj}>{subj}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    {selectedTeacherEmail
+                      ? (selectedTeacherSubjects.length > 0
+                        ? "Options are based on the selected teacher's existing records."
+                        : "No subject record yet for this teacher.")
+                      : "Choose a teacher to load suggested subjects."}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Present Start</label>
+                  <input
+                    type="time"
+                    value={addSectionForm.presentStart}
+                    onChange={(e) => setAddSectionForm((prev) => ({ ...prev, presentStart: e.target.value }))}
+                    title="Present Start"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Present End</label>
+                  <input
+                    type="time"
+                    value={addSectionForm.presentEnd}
+                    onChange={(e) => setAddSectionForm((prev) => ({ ...prev, presentEnd: e.target.value }))}
+                    title="Present End"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Late Start</label>
+                  <input
+                    type="time"
+                    value={addSectionForm.lateStart}
+                    onChange={(e) => setAddSectionForm((prev) => ({ ...prev, lateStart: e.target.value }))}
+                    title="Late Start"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Late End</label>
+                  <input
+                    type="time"
+                    value={addSectionForm.lateEnd}
+                    onChange={(e) => setAddSectionForm((prev) => ({ ...prev, lateEnd: e.target.value }))}
+                    title="Late End"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    required
+                  />
+                </div>
+              </div>
+
+              {!teachersLoading && registeredTeachers.length === 0 && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  No registered user account found yet for Assign Teacher.
+                </p>
+              )}
+
+              <div className="border-t border-gray-100 pt-3">
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Teacher Assignment Summary</h4>
+                {teacherAssignments.length === 0 ? (
+                  <p className="text-xs text-gray-400">No teacher assignments yet.</p>
+                ) : (
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {teacherAssignments.map((teacher) => (
+                      <div key={teacher.email || teacher.name} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                        <p className="text-sm font-semibold text-gray-800">{teacher.name}</p>
+                        {teacher.email && <p className="text-[11px] text-gray-500 mb-1.5">{teacher.email}</p>}
+                        <div className="space-y-1">
+                          {teacher.items
+                            .slice()
+                            .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+                            .map((item) => (
+                              <div key={item._id || `${item.name}-${item.subject}`} className="text-xs text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
+                                <span className="font-semibold">{item.name}</span>
+                                {" | "}
+                                {item.subject}
+                                {" | "}
+                                {getSectionScheduleText(item)}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={addSectionLoading}
+                className="px-4 py-2.5 rounded-xl bg-[#8B1A1A] hover:bg-[#6b1010] disabled:bg-red-300 text-white text-sm font-semibold transition-colors cursor-pointer"
+              >
+                {addSectionLoading ? "Saving..." : "Save Section"}
+              </button>
+            </form>
+          )}
+
+          {studentsLoading || sectionsLoading ? (
             <div className="flex items-center justify-center py-20 text-gray-400">
               <div className="animate-spin w-6 h-6 border-2 border-[#8B1A1A] border-t-transparent rounded-full mr-3" />
               Loading sections...
@@ -516,7 +883,8 @@ function TrackingPage() {
             </div>
           ) : (
             sectionList.map((section) => {
-              const secStudents = sectionMap[section];
+              const secStudents = sectionMap[section] || [];
+              const meta = sectionInfoMap[normalizeSectionKey(section)];
               return (
                 <button
                   key={section}
@@ -532,6 +900,11 @@ function TrackingPage() {
                       <div>
                         <p className="text-white font-bold text-base">{section}</p>
                         <p className="text-red-200 text-xs">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""} — tap to view</p>
+                        {meta && (
+                          <p className="text-red-100 text-[11px] mt-0.5">
+                            {meta.assignedTeacher} | {meta.subject} | {getSectionScheduleText(meta)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
@@ -559,6 +932,7 @@ function TrackingPage() {
       {/* ── SECTION DETAIL MODAL ── */}
       {sectionModal && (() => {
         const secStudents = sectionMap[sectionModal] || [];
+        const sectionMeta = sectionInfoMap[normalizeSectionKey(sectionModal)];
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setSectionModal(null)}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -571,6 +945,11 @@ function TrackingPage() {
                   <div>
                     <h2 className="text-white font-bold text-lg">{sectionModal}</h2>
                     <p className="text-red-200 text-xs">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""}</p>
+                    {sectionMeta && (
+                      <p className="text-red-100 text-[11px] mt-0.5">
+                        Teacher: {sectionMeta.assignedTeacher} | Subject: {sectionMeta.subject} | {getSectionScheduleText(sectionMeta)}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <button onClick={() => setSectionModal(null)} className="text-white/70 hover:text-white transition cursor-pointer">

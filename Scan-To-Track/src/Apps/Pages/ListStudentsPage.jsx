@@ -5,25 +5,12 @@ import { FaUsers, FaTrash, FaArchive, FaCheckSquare, FaCheckCircle, FaTimesCircl
 function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = [], handleBulkDelete, handleArchiveStudents, handleRetrieveStudent }) {
   const [view, setView] = useState("active"); // "active" | "archived"
 
-  // Helper: returns true if a timeIn string (locale format) is after 7:40 AM
-  const checkLate = (timeIn) => {
-    if (!timeIn) return false;
-    const m = timeIn.match(/(\d+):(\d+)(?::\d+)?\s*(AM|PM)?/i);
-    if (!m) return false;
-    let h = parseInt(m[1], 10);
-    const min = parseInt(m[2], 10);
-    const ap = m[3]?.toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    return h > 7 || (h === 7 && min > 40);
-  };
-
   // Compute per-student on-time / late counts and total unique school days
   const totalDays = new Set(allAttendance.map((a) => a.date)).size;
   const presentMap = {}; // on-time scans per lrn
   const lateMap = {};    // late scans per lrn
   allAttendance.forEach((a) => {
-    const late = a.status === "Late" || checkLate(a.timeIn);
+    const late = a.status === "Late";
     if (late) {
       lateMap[a.lrn] = (lateMap[a.lrn] || 0) + 1;
     } else {

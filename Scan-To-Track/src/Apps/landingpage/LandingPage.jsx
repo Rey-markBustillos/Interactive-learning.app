@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaGraduationCap, FaCamera, FaUsers, FaChartBar, FaArrowRight, FaSearch, FaTimes, FaCheckCircle, FaClock, FaCalendarAlt, FaDownload, FaBook, FaTimesCircle } from "react-icons/fa";
+import { FaCamera, FaUsers, FaChartBar, FaArrowRight, FaSearch, FaTimes, FaCheckCircle, FaClock, FaCalendarAlt, FaDownload, FaBook, FaTimesCircle } from "react-icons/fa";
 import schoolBg from "/school-bg.jpg";
 
 function LandingPage() {
@@ -118,8 +118,8 @@ function LandingPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5 gap-3">
         <div className="flex items-center gap-3">
-          <div className="bg-[#8B1A1A] p-2.5 rounded-xl">
-            <FaGraduationCap size={22} className="text-white" />
+          <div className="bg-[#8B1A1A] p-1.5 rounded-xl">
+            <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-8 h-8 rounded-lg object-cover" />
           </div>
           <div>
             <h1 className="text-white font-bold text-lg leading-tight">Scan-to-Track</h1>
@@ -144,8 +144,8 @@ function LandingPage() {
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 sm:px-6 py-10 sm:py-16">
-        <div className="bg-white/20 p-5 rounded-3xl mb-6 inline-block">
-          <FaGraduationCap size={52} className="text-white" />
+        <div className="bg-white/20 p-4 rounded-3xl mb-6 inline-block">
+          <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-20 h-20 rounded-2xl object-cover" />
         </div>
 
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">

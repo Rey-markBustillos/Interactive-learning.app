@@ -173,19 +173,7 @@ function AttendancePage({
               </thead>
               <tbody>
                 {subjectList.map((s, i) => {
-                  // Determine if late: status === 'Late' or timeIn after 7:40am
-                  let isLate = s.status === 'Late';
-                  if (!s.status && s.timeIn) {
-                    const m = s.timeIn.match(/(\d+):(\d+)(?::\d+)?\s*(AM|PM)?/i);
-                    if (m) {
-                      let h = parseInt(m[1], 10);
-                      const min = parseInt(m[2], 10);
-                      const ap = m[3]?.toUpperCase();
-                      if (ap === 'PM' && h !== 12) h += 12;
-                      if (ap === 'AM' && h === 12) h = 0;
-                      isLate = h > 7 || (h === 7 && min > 40);
-                    }
-                  }
+                  const isLate = s.status === "Late";
                   return (
                     <tr key={s._id || i} className="border-b border-gray-100 hover:bg-red-50/50 transition-colors">
                       <td className="px-4 py-3 text-gray-400 text-sm">{i + 1}</td>

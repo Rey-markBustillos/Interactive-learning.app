@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
+import sectionRoutes from "./routes/sectionRoutes.js";
 import mongoose from "mongoose";
 
 dotenv.config();
@@ -86,6 +87,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/sections", sectionRoutes);
 
 // Public: look up a student's attendance by LRN (no auth required)
 app.get("/api/public/track", async (req, res) => {
@@ -93,6 +95,7 @@ app.get("/api/public/track", async (req, res) => {
     const { default: Student } = await import("./models/Student.js");
     const { default: Attendance } = await import("./models/Attendance.js");
     const { default: User } = await import("./models/User.js");
+    const { default: Section } = await import("./models/Section.js");
     const lrn = (req.query.lrn || "").trim();
     if (!lrn) return res.status(400).json({ message: "LRN is required." });
     const students = await Student.find({ lrn }).select("_id name lrn section owner");
@@ -101,9 +104,25 @@ app.get("/api/public/track", async (req, res) => {
     const studentIds = students.map((s) => s._id);
     const ownerIds = [...new Set(students.map((s) => String(s.owner)))];
 
-    const owners = await User.find({ _id: { $in: ownerIds } }).select("_id name subjects");
+    const owners = await User.find({ _id: { $in: ownerIds } }).select("_id name email subjects");
+    const ownerEmails = owners.map((o) => String(o.email || "").toLowerCase()).filter(Boolean);
+    const sectionRows = await Section.find({ assignedTeacherEmail: { $in: ownerEmails } }).select("assignedTeacherEmail subject");
+    const sectionSubjectMap = {};
+    sectionRows.forEach((row) => {
+      const email = String(row.assignedTeacherEmail || "").toLowerCase();
+      const subject = String(row.subject || "").trim();
+      if (!email || !subject) return;
+      if (!sectionSubjectMap[email]) sectionSubjectMap[email] = new Set();
+      sectionSubjectMap[email].add(subject);
+    });
     const ownerMap = Object.fromEntries(
-      owners.map((o) => [String(o._id), { name: o.name, subjects: o.subjects || [] }])
+      owners.map((o) => {
+        const email = String(o.email || "").toLowerCase();
+        const dbSubjects = Array.isArray(o.subjects) ? o.subjects : [];
+        const sectionSubjects = sectionSubjectMap[email] ? [...sectionSubjectMap[email]] : [];
+        const mergedSubjects = [...new Set([...dbSubjects, ...sectionSubjects].map((s) => String(s || "").trim()).filter(Boolean))];
+        return [String(o._id), { name: o.name, subjects: mergedSubjects }];
+      })
     );
 
     const records = await Attendance.find({ student: { $in: studentIds } })

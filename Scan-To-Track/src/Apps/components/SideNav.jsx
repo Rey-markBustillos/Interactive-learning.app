@@ -1,4 +1,4 @@
-import { FaCamera, FaUserPlus, FaUsers, FaChartBar, FaBars, FaTimes, FaGraduationCap, FaInfoCircle, FaClipboardList, FaUserShield } from "react-icons/fa";
+import { FaCamera, FaUserPlus, FaUsers, FaChartBar, FaBars, FaTimes, FaInfoCircle, FaClipboardList, FaUserShield } from "react-icons/fa";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -53,8 +53,8 @@ function SideNav({ active, onNavigate }) {
         {/* Brand */}
         <div className="px-6 pt-8 pb-6">
           <div className="flex items-center gap-3 mb-1">
-            <div className="bg-white/20 p-2 rounded-xl">
-              <FaGraduationCap size={20} className="text-white" />
+            <div className="bg-white/20 p-1.5 rounded-xl">
+              <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-8 h-8 rounded-lg object-cover" />
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight">Scan-to-Track</h1>
@@ -138,6 +138,7 @@ function SideNav({ active, onNavigate }) {
             </button>
           )}
           <div className="bg-white/10 rounded-2xl px-4 py-3 border border-white/10 text-center">
+            <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-8 h-8 rounded-lg object-cover mx-auto mb-1.5" />
             <p className="text-red-200 text-xs">Scan-To-Track</p>
             <p className="text-red-400 text-xs mt-0.5">v1.0.0</p>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUserAlt, FaEnvelope, FaLock, FaArrowLeft, FaUserShield, FaBook, FaTimes } from "react-icons/fa";
+import { FaUserAlt, FaEnvelope, FaLock, FaArrowLeft, FaUserShield } from "react-icons/fa";
 import schoolBg from "/school-bg.jpg";
 
 function Register() {
@@ -18,21 +18,9 @@ function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [subject, setSubject] = useState("");   // current input value
-  const [subjects, setSubjects] = useState([]); // committed subjects array
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const addSubject = () => {
-    const trimmed = subject.trim();
-    if (!trimmed) return;
-    if (subjects.includes(trimmed)) { setSubject(""); return; }
-    setSubjects((prev) => [...prev, trimmed]);
-    setSubject("");
-  };
-
-  const removeSubject = (i) => setSubjects((prev) => prev.filter((_, idx) => idx !== i));
 
   // Check if already logged in as admin
   useEffect(() => {
@@ -78,12 +66,6 @@ function Register() {
     if (!email.trim()) { setError("Email is required."); return; }
     if (!password.trim()) { setError("Password is required."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
-    if (!subject.trim()) { setError("Subject is required."); return; }
-    // Include any un-committed text still in the input box
-    const finalSubjects = subjects.length > 0
-      ? subjects
-      : subject.trim() ? [subject.trim()] : [];
-    if (finalSubjects.length === 0) { setError("At least one subject is required."); return; }
     setLoading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
@@ -92,7 +74,7 @@ function Register() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ name, email, password, subjects: [subject.trim()] }),
+        body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -100,8 +82,6 @@ function Register() {
       setName("");
       setEmail("");
       setPassword("");
-      setSubject("");
-      setSubjects([]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -124,6 +104,11 @@ function Register() {
         className="relative z-10 rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20 w-full max-w-xs sm:max-w-md mx-4"
         style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(18px)" }}
       >
+        <div className="flex justify-center mb-4">
+          <div className="bg-white/20 p-2 rounded-2xl">
+            <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-10 h-10 rounded-xl object-cover" />
+          </div>
+        </div>
 
         {!isAdmin ? (
           /* ── Step 1: Admin Login ── */
@@ -230,43 +215,6 @@ function Register() {
                   required
                   minLength={6}
                 />
-              </div>
-
-              {/* Subjects */}
-              <div>
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wider block mb-2">Subjects</label>
-                <div className="flex gap-2 mb-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-3 text-white/60"><FaBook size={13} /></span>
-                    <input
-                      type="text"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSubject(); } }}
-                      placeholder="e.g. Mathematics"
-                      className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40 transition text-sm"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addSubject}
-                    className="px-4 py-2.5 rounded-xl bg-white/20 border border-white/25 text-white text-sm font-semibold hover:bg-white/30 transition cursor-pointer whitespace-nowrap"
-                  >
-                    + Add
-                  </button>
-                </div>
-                {subjects.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {subjects.map((sub, i) => (
-                      <span key={i} className="flex items-center gap-1.5 bg-white/20 text-white text-xs font-medium px-3 py-1.5 rounded-full border border-white/25">
-                        {sub}
-                        <button type="button" onClick={() => removeSubject(i)} className="text-white/60 hover:text-white cursor-pointer leading-none">
-                          <FaTimes size={9} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <button

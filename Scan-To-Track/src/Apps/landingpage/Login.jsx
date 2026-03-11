@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEnvelope, FaLock, FaGraduationCap } from "react-icons/fa";
+import { FaEnvelope, FaLock } from "react-icons/fa";
 import schoolBg from "/school-bg.jpg";
 
 function Login() {
@@ -52,8 +52,8 @@ function Login() {
         >
           {/* School branding */}
           <div className="flex flex-col items-center mb-7">
-            <div className="bg-white/20 p-3 rounded-2xl mb-3">
-              <FaGraduationCap size={32} className="text-white" />
+            <div className="bg-white/20 p-2 rounded-2xl mb-3">
+              <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-10 h-10 rounded-xl object-cover" />
             </div>
             <h2 className="text-white font-extrabold text-lg text-center leading-tight">
               Jose C. Payumo Jr.<br />Memorial High School

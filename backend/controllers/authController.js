@@ -2,15 +2,23 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
 import Attendance from "../models/Attendance.js";
+import Section from "../models/Section.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
+const getAssignedSubjects = async (user) => {
+  if (!user || user.role === "admin") return user?.subjects || [];
+  const sections = await Section.find({ assignedTeacherEmail: user.email.toLowerCase() }).select("subject");
+  const unique = [...new Set(sections.map((s) => String(s.subject || "").trim()).filter(Boolean))];
+  return unique;
+};
+
 // POST /api/auth/register
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, subjects } = req.body;
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Please fill all fields" });
@@ -25,15 +33,17 @@ export const register = async (req, res, next) => {
       name,
       email,
       password,
-      subjects: Array.isArray(subjects) ? subjects : [],
+      subjects: [],
     });
+
+    const assignedSubjects = await getAssignedSubjects(user);
 
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      subjects: user.subjects,
+      subjects: assignedSubjects,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -55,12 +65,14 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    const assignedSubjects = await getAssignedSubjects(user);
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      subjects: user.subjects,
+      subjects: assignedSubjects,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -69,8 +81,16 @@ export const login = async (req, res, next) => {
 };
 
 // GET /api/auth/me
-export const getMe = async (req, res) => {
-  res.json(req.user);
+export const getMe = async (req, res, next) => {
+  try {
+    const assignedSubjects = await getAssignedSubjects(req.user);
+    res.json({
+      ...req.user.toObject(),
+      subjects: assignedSubjects,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // GET /api/auth/users  (admin only)
