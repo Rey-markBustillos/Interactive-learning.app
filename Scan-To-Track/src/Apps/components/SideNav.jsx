@@ -21,6 +21,7 @@ function SideNav({ active, onNavigate }) {
   };
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user.role === "admin";
 
   return (
     <>
@@ -96,7 +97,12 @@ function SideNav({ active, onNavigate }) {
 
         {/* Nav items */}
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
+          {navItems.map((item) => {
+            const isTracking = item.key === "tracking";
+            const itemLabel = isTracking && isAdmin ? "Assigned Teacher" : item.label;
+            const itemDesc = isTracking && isAdmin ? "Assign teacher" : item.desc;
+
+            return (
             <button
               key={item.key}
               onClick={() => handleNav(item.key)}
@@ -113,16 +119,17 @@ function SideNav({ active, onNavigate }) {
                 <item.icon size={14} />
               </div>
               <div className="text-left">
-                <p className="leading-tight">{item.label}</p>
+                <p className="leading-tight">{itemLabel}</p>
                 <p className={`text-xs mt-0.5 ${
                   active === item.key ? "text-red-400" : "text-red-400 group-hover:text-red-300"
-                }`}>{item.desc}</p>
+                }`}>{itemDesc}</p>
               </div>
               {active === item.key && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-red-400" />
               )}
             </button>
-          ))}
+            );
+          })}
         </nav>
 
         {/* Footer */}

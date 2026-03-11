@@ -44,6 +44,13 @@ function normalizeSectionKey(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function normalizeGender(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "male" || raw === "m") return "male";
+  if (raw === "female" || raw === "f") return "female";
+  return "unspecified";
+}
+
 function formatDisplayTime(value) {
   const m = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return value || "--";
@@ -272,6 +279,26 @@ function TrackingPage() {
     }
   };
 
+  const handleRemoveAssignment = async (sectionId, summaryText) => {
+    const ok = window.confirm(`Remove this assignment?\n\n${summaryText}`);
+    if (!ok) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/sections/${sectionId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to remove assignment.");
+
+      setSections((prev) => prev.filter((s) => s._id !== sectionId));
+      setAddSectionMsg({ text: "Section assignment removed.", type: "success" });
+    } catch (err) {
+      setAddSectionMsg({ text: err.message || "Failed to remove assignment.", type: "error" });
+    }
+  };
+
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
@@ -319,11 +346,11 @@ function TrackingPage() {
       const monthName = MONTH_NAMES[exportMonth - 1];
       const totalCols = 2 + weekdays.length + 2; // #, Name, days, ABSENT, TARDY
 
-      // presence map: lrn → Set of date strings they were scanned
-      const presenceMap = {};
+      // attendance map: lrn → date → status (Present/Late)
+      const attendanceMap = {};
       attendance.forEach((r) => {
-        if (!presenceMap[r.lrn]) presenceMap[r.lrn] = new Set();
-        presenceMap[r.lrn].add(r.date);
+        if (!attendanceMap[r.lrn]) attendanceMap[r.lrn] = {};
+        attendanceMap[r.lrn][r.date] = r.status || "Present";
       });
 
       // ── Style helpers ──────────────────────────────────────────────
@@ -425,6 +452,30 @@ function TrackingPage() {
           alignment: { horizontal: "center", vertical: "center" },
           border,
         },
+        late: {
+          font: { bold: true, sz: 9, color: { rgb: "E65100" } },
+          fill: { fgColor: { rgb: "FFF3E0" } },
+          alignment: { horizontal: "center", vertical: "center" },
+          border,
+        },
+        lateEven: {
+          font: { bold: true, sz: 9, color: { rgb: "E65100" } },
+          fill: { fgColor: { rgb: "FFE0B2" } },
+          alignment: { horizontal: "center", vertical: "center" },
+          border,
+        },
+        absent: {
+          font: { bold: true, sz: 9, color: { rgb: "B71C1C" } },
+          fill: { fgColor: { rgb: "FFEBEE" } },
+          alignment: { horizontal: "center", vertical: "center" },
+          border,
+        },
+        absentEven: {
+          font: { bold: true, sz: 9, color: { rgb: "B71C1C" } },
+          fill: { fgColor: { rgb: "FFCDD2" } },
+          alignment: { horizontal: "center", vertical: "center" },
+          border,
+        },
         blankOdd: {
           fill: { fgColor: { rgb: "FAFAFA" } },
           alignment: { horizontal: "center", vertical: "center" },
@@ -455,144 +506,166 @@ function TrackingPage() {
 
       const cell = (v, style) => ({ v, s: style, t: typeof v === "number" ? "n" : "s" });
 
-      // ── Build worksheet manually (row by row) ──────────────────────
-      const ws = {};
-      let R = 0; // 0-indexed row
+      const buildGenderSheet = (sheetStudents, genderLabel) => {
+        const ws = {};
+        let R = 0; // 0-indexed row
 
-      const setCell = (r, c, v, style) => {
-        ws[XLSXStyle.utils.encode_cell({ r, c })] = cell(v, style);
-      };
-      const setBlankCell = (r, c, style) => {
-        ws[XLSXStyle.utils.encode_cell({ r, c })] = { v: "", s: style, t: "s" };
-      };
+        const setCell = (r, c, v, style) => {
+          ws[XLSXStyle.utils.encode_cell({ r, c })] = cell(v, style);
+        };
+        const setBlankCell = (r, c, style) => {
+          ws[XLSXStyle.utils.encode_cell({ r, c })] = { v: "", s: style, t: "s" };
+        };
 
-      // Row 0 — Title
-      setCell(R, 0, "School Form 2 (SF2) Daily Attendance Report of Learners", s.title);
-      for (let c = 1; c < totalCols; c++) setBlankCell(R, c, s.title);
-      R++;
+        // Row 0 — Title
+        setCell(R, 0, "School Form 2 (SF2) Daily Attendance Report of Learners", s.title);
+        for (let c = 1; c < totalCols; c++) setBlankCell(R, c, s.title);
+        R++;
 
-      // Row 1 — Subtitle
-      setCell(R, 0, "(This replaced Form 1, Form 2 & STS Form 4 – Absenteeism and Dropout Profile)", s.subtitle);
-      for (let c = 1; c < totalCols; c++) setBlankCell(R, c, s.subtitle);
-      R++;
+        // Row 1 — Subtitle
+        setCell(R, 0, "(This replaced Form 1, Form 2 & STS Form 4 – Absenteeism and Dropout Profile) | Legend: / Present | ★ Late | A Absent", s.subtitle);
+        for (let c = 1; c < totalCols; c++) setBlankCell(R, c, s.subtitle);
+        R++;
 
-      // Row 2 — School ID / School Year / Month
-      const infoRow2 = [
-        ["School ID", s.infoLabel], [schoolInfo.schoolId, s.infoValue], ["", s.blankFill], ["", s.blankFill],
-        ["School Year", s.infoLabel], [schoolInfo.schoolYear, s.infoValue], ["", s.blankFill], ["", s.blankFill],
-        ["Report for the Month of:", s.infoLabel], [monthName.toUpperCase(), { ...s.infoValue, font: { bold: true, sz: 10, color: { rgb: "1565C0" } } }],
-      ];
-      infoRow2.forEach(([v, st], c) => setCell(R, c, v, st));
-      for (let c = infoRow2.length; c < totalCols; c++) setBlankCell(R, c, s.blankFill);
-      R++;
+        // Row 2 — School ID / School Year / Month
+        const infoRow2 = [
+          ["School ID", s.infoLabel], [schoolInfo.schoolId, s.infoValue], ["", s.blankFill], ["", s.blankFill],
+          ["School Year", s.infoLabel], [schoolInfo.schoolYear, s.infoValue], ["", s.blankFill], ["", s.blankFill],
+          ["Report for the Month of:", s.infoLabel], [monthName.toUpperCase(), { ...s.infoValue, font: { bold: true, sz: 10, color: { rgb: "1565C0" } } }],
+        ];
+        infoRow2.forEach(([v, st], c) => setCell(R, c, v, st));
+        for (let c = infoRow2.length; c < totalCols; c++) setBlankCell(R, c, s.blankFill);
+        R++;
 
-      // Row 3 — School Name / Grade / Section
-      const infoRow3 = [
-        ["Name of School:", s.infoLabel], [schoolInfo.schoolName, s.infoValue], ["", s.blankFill], ["", s.blankFill], ["", s.blankFill], ["", s.blankFill],
-        ["Grade Level:", s.infoLabel], [schoolInfo.gradeLevel, s.infoValue],
-        ["Section:", s.infoLabel], [schoolInfo.section, s.infoValue],
-      ];
-      infoRow3.forEach(([v, st], c) => setCell(R, c, v, st));
-      for (let c = infoRow3.length; c < totalCols; c++) setBlankCell(R, c, s.blankFill);
-      R++;
+        // Row 3 — School Name / Grade / Section (with gender page label)
+        const infoRow3 = [
+          ["Name of School:", s.infoLabel], [schoolInfo.schoolName, s.infoValue], ["", s.blankFill], ["", s.blankFill], ["", s.blankFill], ["", s.blankFill],
+          ["Grade Level:", s.infoLabel], [schoolInfo.gradeLevel, s.infoValue],
+          ["Section:", s.infoLabel], [`${schoolInfo.section} (${genderLabel})`, s.infoValue],
+        ];
+        infoRow3.forEach(([v, st], c) => setCell(R, c, v, st));
+        for (let c = infoRow3.length; c < totalCols; c++) setBlankCell(R, c, s.blankFill);
+        R++;
 
-      // Row 4 — Date number header
-      setCell(R, 0, "#", s.colHeaderDate);
-      setCell(R, 1, "LEARNER'S NAME (Last Name, First Name, Middle Name)", s.colHeaderName);
-      weekdays.forEach((d, i) => setCell(R, 2 + i, d.getDate(), s.colHeaderDate));
-      setCell(R, 2 + weekdays.length,     "ABSENT", s.colHeaderSummary);
-      setCell(R, 2 + weekdays.length + 1, "TARDY",  s.colHeaderSummary);
-      R++;
+        // Row 4 — Date number header
+        setCell(R, 0, "#", s.colHeaderDate);
+        setCell(R, 1, "LEARNER'S NAME (Last Name, First Name, Middle Name)", s.colHeaderName);
+        weekdays.forEach((d, i) => setCell(R, 2 + i, d.getDate(), s.colHeaderDate));
+        setCell(R, 2 + weekdays.length, "ABSENT", s.colHeaderSummary);
+        setCell(R, 2 + weekdays.length + 1, "TARDY", s.colHeaderSummary);
+        R++;
 
-      // Row 5 — Day abbreviation header
-      setBlankCell(R, 0, s.colHeaderDay);
-      setCell(R, 1, "(1st row for date, 2nd row for Day: M,T,W,TH,F)", s.colHeaderDay);
-      weekdays.forEach((d, i) => setCell(R, 2 + i, DAYS_SHORT[d.getDay()], s.colHeaderDay));
-      setBlankCell(R, 2 + weekdays.length,     s.colHeaderDay);
-      setBlankCell(R, 2 + weekdays.length + 1, s.colHeaderDay);
-      R++;
+        // Row 5 — Day abbreviation header
+        setBlankCell(R, 0, s.colHeaderDay);
+        setCell(R, 1, "(1st row for date, 2nd row for Day: M,T,W,TH,F)", s.colHeaderDay);
+        weekdays.forEach((d, i) => setCell(R, 2 + i, DAYS_SHORT[d.getDay()], s.colHeaderDay));
+        setBlankCell(R, 2 + weekdays.length, s.colHeaderDay);
+        setBlankCell(R, 2 + weekdays.length + 1, s.colHeaderDay);
+        R++;
 
-      // Student rows — "/" = present (scanned), blank = no record
-      const presentCounts = new Array(weekdays.length).fill(0);
-      students.forEach((stu, i) => {
-        const isEven = i % 2 === 1;
-        const nStyle  = isEven ? s.nameEven  : s.nameOdd;
-        const numStyle = isEven ? s.numEven  : s.numOdd;
-        const pStyle  = isEven ? s.presentEven : s.present;
-        const bStyle  = isEven ? s.blankEven : s.blankOdd;
+        // Student rows — / = present, ★ = late, A = absent
+        const presentCounts = new Array(weekdays.length).fill(0);
+        let totalAbsentAll = 0;
+        let totalLateAll = 0;
+        sheetStudents.forEach((stu, i) => {
+          const isEven = i % 2 === 1;
+          const nStyle = isEven ? s.nameEven : s.nameOdd;
+          const numStyle = isEven ? s.numEven : s.numOdd;
+          const pStyle = isEven ? s.presentEven : s.present;
+          const lStyle = isEven ? s.lateEven : s.late;
+          const aStyle = isEven ? s.absentEven : s.absent;
 
-        setCell(R, 0, i + 1, numStyle);
-        setCell(R, 1, stu.name, nStyle);
+          setCell(R, 0, i + 1, numStyle);
+          setCell(R, 1, stu.name, nStyle);
 
-        const presentSet = presenceMap[stu.lrn] || new Set();
-        let presentTotal = 0;
+          const statusByDate = attendanceMap[stu.lrn] || {};
+          let lateTotal = 0;
+          let absentTotal = 0;
 
-        weekdays.forEach((d, wi) => {
-          const ds = fmtDate(d);
-          if (presentSet.has(ds)) {
-            setCell(R, 2 + wi, "/", pStyle);
-            presentTotal++;
-            presentCounts[wi]++;
-          } else {
-            setBlankCell(R, 2 + wi, bStyle);
-          }
+          weekdays.forEach((d, wi) => {
+            const ds = fmtDate(d);
+            const status = statusByDate[ds];
+            if (status === "Late") {
+              setCell(R, 2 + wi, "★", lStyle);
+              lateTotal++;
+              presentCounts[wi]++;
+            } else if (status) {
+              setCell(R, 2 + wi, "/", pStyle);
+              presentCounts[wi]++;
+            } else {
+              setCell(R, 2 + wi, "A", aStyle);
+              absentTotal++;
+            }
+          });
+
+          setCell(R, 2 + weekdays.length, absentTotal, numStyle);
+          setCell(R, 2 + weekdays.length + 1, lateTotal, numStyle);
+          totalAbsentAll += absentTotal;
+          totalLateAll += lateTotal;
+          R++;
         });
 
-        setCell(R, 2 + weekdays.length,     presentTotal, numStyle);
-        setCell(R, 2 + weekdays.length + 1, 0,            numStyle);
+        // Total present per day row
+        setBlankCell(R, 0, s.totalRow);
+        setCell(R, 1, "TOTAL PRESENT PER DAY", s.totalLabel);
+        presentCounts.forEach((count, i) => setCell(R, 2 + i, count, s.totalRow));
+        setCell(R, 2 + weekdays.length, totalAbsentAll, s.totalRow);
+        setCell(R, 2 + weekdays.length + 1, totalLateAll, s.totalRow);
         R++;
-      });
 
-      // Total present per day row
-      setBlankCell(R, 0, s.totalRow);
-      setCell(R, 1, "TOTAL PRESENT PER DAY", s.totalLabel);
-      presentCounts.forEach((count, i) => setCell(R, 2 + i, count, s.totalRow));
-      setCell(R, 2 + weekdays.length,     presentCounts.reduce((a, b) => a + b, 0), s.totalRow);
-      setCell(R, 2 + weekdays.length + 1, 0, s.totalRow);
-      R++;
+        // Set worksheet range
+        ws["!ref"] = `A1:${XLSXStyle.utils.encode_cell({ r: R - 1, c: totalCols - 1 })}`;
 
-      // Set worksheet range
-      ws["!ref"] = `A1:${XLSXStyle.utils.encode_cell({ r: R - 1, c: totalCols - 1 })}`;
+        // Column widths
+        ws["!cols"] = [
+          { wch: 4 },
+          { wch: 40 },
+          ...weekdays.map(() => ({ wch: 5 })),
+          { wch: 9 },
+          { wch: 7 },
+        ];
 
-      // Column widths
-      ws["!cols"] = [
-        { wch: 4 },
-        { wch: 40 },
-        ...weekdays.map(() => ({ wch: 5 })),
-        { wch: 9 },
-        { wch: 7 },
-      ];
+        // Row heights
+        ws["!rows"] = [
+          { hpt: 28 }, // title
+          { hpt: 16 }, // subtitle
+          { hpt: 18 }, // school info
+          { hpt: 18 },
+          { hpt: 22 }, // date header
+          { hpt: 18 }, // day header
+          ...sheetStudents.map(() => ({ hpt: 16 })),
+          { hpt: 18 }, // total row
+        ];
 
-      // Row heights
-      ws["!rows"] = [
-        { hpt: 28 }, // title
-        { hpt: 16 }, // subtitle
-        { hpt: 18 }, // school info
-        { hpt: 18 },
-        { hpt: 22 }, // date header
-        { hpt: 18 }, // day header
-        ...students.map(() => ({ hpt: 16 })),
-        { hpt: 18 }, // total row
-      ];
+        // Merges
+        ws["!merges"] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }, // title
+          { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }, // subtitle
+          { s: { r: 2, c: 1 }, e: { r: 2, c: 3 } }, // school ID value span
+          { s: { r: 2, c: 5 }, e: { r: 2, c: 7 } }, // school year value span
+          { s: { r: 3, c: 1 }, e: { r: 3, c: 5 } }, // school name value span
+          { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } }, // # merge rows
+          { s: { r: 4, c: 1 }, e: { r: 5, c: 1 } }, // name merge rows
+          { s: { r: 4, c: totalCols - 2 }, e: { r: 5, c: totalCols - 2 } }, // ABSENT
+          { s: { r: 4, c: totalCols - 1 }, e: { r: 5, c: totalCols - 1 } }, // TARDY
+        ];
 
-      // Merges
-      ws["!merges"] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }, // title
-        { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }, // subtitle
-        { s: { r: 2, c: 1 }, e: { r: 2, c: 3 } },  // school ID value span
-        { s: { r: 2, c: 5 }, e: { r: 2, c: 7 } },  // school year value span
-        { s: { r: 3, c: 1 }, e: { r: 3, c: 5 } },  // school name value span
-        { s: { r: 4, c: 0 }, e: { r: 5, c: 0 } },  // # merge rows
-        { s: { r: 4, c: 1 }, e: { r: 5, c: 1 } },  // name merge rows
-        { s: { r: 4, c: totalCols - 2 }, e: { r: 5, c: totalCols - 2 } }, // ABSENT
-        { s: { r: 4, c: totalCols - 1 }, e: { r: 5, c: totalCols - 1 } }, // TARDY
-      ];
+        // Freeze pane below header rows, after name col
+        ws["!freeze"] = { xSplit: 2, ySplit: 6 };
 
-      // Freeze pane below header rows, after name col
-      ws["!freeze"] = { xSplit: 2, ySplit: 6 };
+        return ws;
+      };
+
+      const maleStudents = students.filter((stu) => normalizeGender(stu.gender) === "male");
+      const femaleStudents = students.filter((stu) => normalizeGender(stu.gender) === "female");
+      const unspecifiedStudents = students.filter((stu) => normalizeGender(stu.gender) === "unspecified");
 
       const wb = XLSXStyle.utils.book_new();
-      XLSXStyle.utils.book_append_sheet(wb, ws, monthName);
+      XLSXStyle.utils.book_append_sheet(wb, buildGenderSheet(maleStudents, "Male"), `Page 1 - Male`);
+      XLSXStyle.utils.book_append_sheet(wb, buildGenderSheet(femaleStudents, "Female"), `Page 2 - Female`);
+      if (unspecifiedStudents.length > 0) {
+        XLSXStyle.utils.book_append_sheet(wb, buildGenderSheet(unspecifiedStudents, "Unspecified"), `Page 3 - Unspecified`);
+      }
       XLSXStyle.writeFile(wb, `SF2_${monthStr}_${(filterSection || schoolInfo.section).replace(/\s+/g, "_")}.xlsx`);
       if (filterSection) setSectionExportOpen(null); else setExportOpen(false);
     } catch (err) {
@@ -845,12 +918,22 @@ function TrackingPage() {
                             .slice()
                             .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
                             .map((item) => (
-                              <div key={item._id || `${item.name}-${item.subject}`} className="text-xs text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5">
-                                <span className="font-semibold">{item.name}</span>
-                                {" | "}
-                                {item.subject}
-                                {" | "}
-                                {getSectionScheduleText(item)}
+                              <div key={item._id || `${item.name}-${item.subject}`} className="text-xs text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <span className="font-semibold">{item.name}</span>
+                                  {" | "}
+                                  {item.subject}
+                                  {" | "}
+                                  {getSectionScheduleText(item)}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveAssignment(item._id, `${item.name} | ${item.subject}`)}
+                                  className="shrink-0 px-2 py-1 rounded-md bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
+                                  title="Remove assignment"
+                                >
+                                  Remove
+                                </button>
                               </div>
                             ))}
                         </div>

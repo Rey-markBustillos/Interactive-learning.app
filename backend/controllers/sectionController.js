@@ -83,3 +83,21 @@ export const createSection = async (req, res, next) => {
     next(error);
   }
 };
+
+export const deleteSection = async (req, res, next) => {
+  try {
+    const userEmail = (req.user?.email || "").toLowerCase();
+    if (userEmail !== SUPER_ADMIN_EMAIL) {
+      return res.status(403).json({ message: "Only admin@jcp.edu.ph can remove section assignments." });
+    }
+
+    const removed = await Section.findByIdAndDelete(req.params.id);
+    if (!removed) {
+      return res.status(404).json({ message: "Section assignment not found." });
+    }
+
+    res.json({ message: "Section assignment removed." });
+  } catch (error) {
+    next(error);
+  }
+};
