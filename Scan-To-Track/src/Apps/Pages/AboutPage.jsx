@@ -6,6 +6,8 @@ const members = [
   { name: "Member Name 2",      role: "UI/UX Designer",    photo: "/members/member2.jpg", color: "from-purple-500 to-pink-500",  ring: "ring-purple-400" },
   { name: "Member Name 3",      role: "Backend Developer", photo: "/members/member3.jpg", color: "from-emerald-500 to-teal-600", ring: "ring-emerald-400" },
   { name: "Member Name 4",      role: "Quality Assurance", photo: "/members/member4.jpg", color: "from-orange-400 to-rose-500",  ring: "ring-orange-400" },
+  { name: "Member Name 5",      role: "Documentation",     photo: "/members/member5.jpg", color: "from-sky-500 to-indigo-600",   ring: "ring-sky-400" },
+  { name: "Member Name 6",      role: "Project Support",   photo: "/members/member6.jpg", color: "from-lime-500 to-green-600",    ring: "ring-lime-400" },
 ];
 
 const techStack = [
