@@ -112,6 +112,7 @@ function ReportPage({ reportDate, setReportDate, reportList, reportLoading, tota
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase rounded-l-xl">#</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Gender</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Time In</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase rounded-r-xl">Status</th>
                 </tr>
@@ -122,6 +123,7 @@ function ReportPage({ reportDate, setReportDate, reportList, reportLoading, tota
                     <td className="px-4 py-3 text-gray-400 text-sm">{i + 1}</td>
                     <td className="px-4 py-3 text-gray-600 font-mono text-sm">{r.lrn}</td>
                     <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{r.name}</td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">{r.gender || "-"}</td>
                     <td className="px-4 py-3 text-gray-500 text-sm">{r.timeIn}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-3 py-1 rounded-full ${r.status === "Late" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>

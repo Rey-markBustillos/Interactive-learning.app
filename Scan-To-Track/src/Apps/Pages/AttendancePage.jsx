@@ -164,6 +164,7 @@ function AttendancePage({
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase rounded-l-xl">#</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Gender</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Section</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Day</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
@@ -179,6 +180,7 @@ function AttendancePage({
                       <td className="px-4 py-3 text-gray-400 text-sm">{i + 1}</td>
                       <td className="px-4 py-3 text-gray-700 font-mono text-sm">{s.lrn}</td>
                       <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{s.name}</td>
+                      <td className="px-4 py-3 text-gray-600 text-sm">{s.gender || "-"}</td>
                       <td className="px-4 py-3">
                         {s.section ? (
                           <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>

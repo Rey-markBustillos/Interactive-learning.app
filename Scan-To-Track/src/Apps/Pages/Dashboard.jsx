@@ -51,7 +51,7 @@ function Dashboard() {
   const streamRef = useRef(null);
 
   //  Add Student form state
-  const [addForm, setAddForm] = useState({ lrn: "", name: "", section: "" });
+  const [addForm, setAddForm] = useState({ lrn: "", name: "", gender: "", section: "" });
   const [addMsg, setAddMsg] = useState({ text: "", type: "" });
   const [addLoading, setAddLoading] = useState(false);
 
@@ -440,7 +440,7 @@ function Dashboard() {
       const d = await res.json();
       if (!res.ok) { setAddMsg({ text: d.message, type: "error" }); setAddLoading(false); return; }
       setStudents((prev) => [...prev, d]);
-      setAddForm({ lrn: "", name: "", section: "" });
+      setAddForm({ lrn: "", name: "", gender: "", section: "" });
       setAddMsg({ text: d.name + " added successfully!", type: "success" });
     } catch {
       setAddMsg({ text: "Server not reachable. Check backend.", type: "error" });

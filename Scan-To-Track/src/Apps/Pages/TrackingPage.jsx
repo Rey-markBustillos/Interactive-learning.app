@@ -981,6 +981,7 @@ function TrackingPage() {
                       <th className="px-5 py-3 text-left font-semibold">#</th>
                       <th className="px-5 py-3 text-left font-semibold">LRN</th>
                       <th className="px-5 py-3 text-left font-semibold">Name</th>
+                      <th className="px-5 py-3 text-left font-semibold">Gender</th>
                       <th className="px-5 py-3 text-left font-semibold">Section</th>
                       <th className="px-5 py-3 text-center font-semibold text-green-600">Present</th>
                       <th className="px-5 py-3 text-center font-semibold text-orange-500">Late</th>
@@ -1004,6 +1005,7 @@ function TrackingPage() {
                               <span className="text-gray-800 font-semibold">{s.name}</span>
                             </div>
                           </td>
+                          <td className="px-5 py-3 text-gray-600 text-xs">{s.gender || "-"}</td>
                           <td className="px-5 py-3">
                             <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
                           </td>
@@ -1274,6 +1276,7 @@ function TrackingPage() {
                         <th className="px-5 py-2.5 text-left font-semibold">#</th>
                         <th className="px-5 py-2.5 text-left font-semibold">LRN</th>
                         <th className="px-5 py-2.5 text-left font-semibold">Name</th>
+                        <th className="px-5 py-2.5 text-left font-semibold">Gender</th>
                         <th className="px-5 py-2.5 text-left font-semibold">
                           <span className="flex items-center gap-1"><FaClock size={10} /> Time In</span>
                         </th>
@@ -1296,6 +1299,7 @@ function TrackingPage() {
                               <span className="text-gray-800 font-semibold">{r.name}</span>
                             </div>
                           </td>
+                          <td className="px-5 py-3 text-gray-600 text-xs">{r.gender || "-"}</td>
                           <td className="px-5 py-3 text-gray-600 text-xs font-medium">{r.timeIn}</td>
                           <td className="px-5 py-3">
                             <span className={`${statusBadge(r.status)} text-xs font-semibold px-2.5 py-1 rounded-full`}>

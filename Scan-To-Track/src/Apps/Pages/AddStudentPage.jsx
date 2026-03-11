@@ -39,6 +39,7 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
       const lrnCol = findCol(keys, "lrn", "learner");
       const nameCol = findCol(keys, "name", "fullname", "studentname", "pupil");
       const sectionCol = findCol(keys, "section", "class", "grade");
+      const genderCol = findCol(keys, "gender", "sex");
       if (!lrnCol || !nameCol) {
         setImportMsg({ text: `Could not find LRN or Name column. Columns in file: ${keys.join(", ")}`, type: "error" });
         return;
@@ -47,8 +48,19 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
         setImportMsg({ text: `Could not find a Section column. Add a "Section" column to your file. Columns found: ${keys.join(", ")}`, type: "error" });
         return;
       }
+      const normalizeGender = (value) => {
+        const raw = String(value || "").trim().toLowerCase();
+        if (raw === "male" || raw === "m") return "Male";
+        if (raw === "female" || raw === "f") return "Female";
+        return "";
+      };
       const parsed = rows
-        .map((r) => ({ lrn: String(r[lrnCol]).trim(), name: String(r[nameCol]).trim(), section: String(r[sectionCol]).trim() }))
+        .map((r) => ({
+          lrn: String(r[lrnCol]).trim(),
+          name: String(r[nameCol]).trim(),
+          section: String(r[sectionCol]).trim(),
+          gender: genderCol ? normalizeGender(r[genderCol]) : "",
+        }))
         .filter((r) => r.lrn && r.name && r.section && r.lrn !== "0" && r.lrn !== "");
       if (parsed.length === 0) {
         setImportMsg({ text: "No valid rows found after parsing. Make sure LRN, Name, and Section columns are all filled.", type: "error" });
@@ -145,6 +157,19 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
               />
             </div>
             <div>
+              <label className="block text-sm font-semibold text-gray-600 mb-1.5">Gender</label>
+              <select
+                value={addForm.gender || ""}
+                onChange={(e) => setAddForm((f) => ({ ...f, gender: e.target.value }))}
+                className="w-full px-4 py-3 border-2 border-gray-100 bg-gray-50 rounded-xl focus:outline-none focus:border-[#8B1A1A] focus:bg-white transition text-sm"
+                required
+              >
+                <option value="" disabled>Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-sm font-semibold text-gray-600 mb-1.5">
                 <FaLayerGroup className="inline mr-1.5 text-[#8B1A1A]" size={12} />
                 Section
@@ -193,7 +218,7 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
             <div className="bg-gray-50 rounded-xl px-4 py-3 text-xs text-gray-500 space-y-1">
               <p className="font-semibold text-gray-600">CSV / Excel Format:</p>
               <p>• Must have a <span className="font-mono bg-white px-1 rounded border border-gray-200">lrn</span> and <span className="font-mono bg-white px-1 rounded border border-gray-200">name</span> column</p>
-              <p>• Other columns are ignored — only lrn and name will be used</p>
+              <p>• <span className="font-mono bg-white px-1 rounded border border-gray-200">section</span> is required, <span className="font-mono bg-white px-1 rounded border border-gray-200">gender</span> is optional (Male/Female)</p>
               <p>• Students with duplicate LRN will be skipped</p>
             </div>
 
@@ -218,6 +243,8 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
                         <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">#</th>
                         <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">LRN</th>
                         <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                        <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Gender</th>
+                        <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Section</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -226,6 +253,8 @@ function AddStudentPage({ addForm, setAddForm, addMsg, addLoading, handleAddStud
                           <td className="px-3 py-2 text-gray-400">{i + 1}</td>
                           <td className="px-3 py-2 font-mono text-gray-700">{r.lrn}</td>
                           <td className="px-3 py-2 text-gray-800 font-medium">{r.name}</td>
+                          <td className="px-3 py-2 text-gray-700">{r.gender || "-"}</td>
+                          <td className="px-3 py-2 text-gray-700">{r.section}</td>
                         </tr>
                       ))}
                     </tbody>

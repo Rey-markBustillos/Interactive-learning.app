@@ -1,6 +1,13 @@
 import Student from "../models/Student.js";
 import Attendance from "../models/Attendance.js";
 
+function normalizeGender(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "male" || raw === "m") return "Male";
+  if (raw === "female" || raw === "f") return "Female";
+  return undefined;
+}
+
 // GET /api/students
 export const getStudents = async (req, res, next) => {
   try {
@@ -15,12 +22,13 @@ export const getStudents = async (req, res, next) => {
 export const createStudent = async (req, res, next) => {
   try {
     const { lrn, name, section } = req.body;
+    const gender = normalizeGender(req.body.gender);
 
     if (!lrn || !name || !section) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    const student = await Student.create({ lrn, name, section, owner: req.user._id });
+    const student = await Student.create({ lrn, name, section, gender, owner: req.user._id });
     res.status(201).json(student);
   } catch (error) {
     if (error.code === 11000) {
@@ -50,7 +58,13 @@ export const bulkCreateStudents = async (req, res, next) => {
     if (!Array.isArray(students) || students.length === 0) {
       return res.status(400).json({ message: "No students provided" });
     }
-    const docs = students.map((s) => ({ lrn: String(s.lrn).trim(), name: String(s.name).trim(), section: String(s.section || "").trim(), owner: req.user._id }));
+    const docs = students.map((s) => ({
+      lrn: String(s.lrn).trim(),
+      name: String(s.name).trim(),
+      section: String(s.section || "").trim(),
+      gender: normalizeGender(s.gender),
+      owner: req.user._id,
+    }));
     let inserted = [];
     try {
       const result = await Student.insertMany(docs, { ordered: false });

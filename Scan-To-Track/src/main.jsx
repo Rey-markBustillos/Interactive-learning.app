@@ -11,17 +11,18 @@ const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
     Swal.fire({
-      icon: "info",
-      title: "May bagong update",
-      text: "Nagre-refresh ang app para sa latest version...",
-      timer: 1800,
-      timerProgressBar: true,
-      showConfirmButton: false,
+      icon: "warning",
+      title: "Need Update",
+      text: "May bagong update ang system. I-update ngayon para makuha ang latest changes.",
+      confirmButtonText: "Update Now",
+      confirmButtonColor: "#8B1A1A",
       allowOutsideClick: false,
       allowEscapeKey: false,
     }).then(() => {
       localStorage.setItem("app_version", APP_VERSION);
-      updateSW(true);
+      Promise.resolve(updateSW(true)).catch(() => {
+        window.location.reload();
+      });
     });
   },
 });
