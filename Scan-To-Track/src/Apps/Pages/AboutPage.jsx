@@ -128,7 +128,6 @@ function AboutPage() {
             </div>
             <h2 className="text-base font-bold text-gray-800">Group Members</h2>
           </div>
-          <span className="text-xs text-gray-400">Place photos in <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">public/members/</code></span>
         </div>
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {members.map((m, i) => (
