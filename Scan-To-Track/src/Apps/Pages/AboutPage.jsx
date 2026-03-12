@@ -4,10 +4,10 @@ import { FaGraduationCap, FaSchool, FaUsers, FaCode, FaHeart, FaStar, FaCamera }
 const members = [
   { name: "Prince William R. Romano", role: "Lead Developer",   photo: "/members/member.jpeg", color: "from-[#8B1A1A] to-[#4a0a0a]",   ring: "ring-red-400"   },
   { name: "Charlie Nicole M. Isuan",      role: "UI/UX Designer",    photo: "/members/member2.jpg", color: "from-purple-500 to-pink-500",  ring: "ring-purple-400" },
-  { name: "Justine Angelo D. Carpio",      role: "Backend Developer", photo: "/members/member3.jpg", color: "from-emerald-500 to-teal-600", ring: "ring-emerald-400" },
+  { name: "Vonne Marcelah L. Dela Peña",      role: "Backend Developer", photo: "/members/member3.jpg", color: "from-emerald-500 to-teal-600", ring: "ring-emerald-400" },
   { name: "Ashley Nicole M. Tolentino",      role: "Quality Assurance", photo: "/members/member4.jpg", color: "from-orange-400 to-rose-500",  ring: "ring-orange-400" },
   { name: "Ciannarey Elsane C. Labandelo",      role: "Documentation",     photo: "/members/member5.jpg", color: "from-sky-500 to-indigo-600",   ring: "ring-sky-400" },
-  { name: "Vonne Marcelah L. Dela Peña",      role: "Project Support",   photo: "/members/member6.jpg", color: "from-lime-500 to-green-600",    ring: "ring-lime-400" },
+  { name: "Justine Angelo D. Carpio",      role: "Project Support",   photo: "/members/member6.jpg", color: "from-lime-500 to-green-600",    ring: "ring-lime-400" },
 ];
 
 const techStack = [
