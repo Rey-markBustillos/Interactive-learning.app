@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback, useMemo } from "react";
 import XLSXStyle from "xlsx-js-style";
 import {
   FaSearch, FaCalendarAlt, FaClipboardList, FaClock,
@@ -136,15 +136,27 @@ function TrackingPage() {
   const isSectionAdmin = (currentUser.email || "").toLowerCase() === "admin@jcp.edu.ph";
 
   const selectedTeacherEmail = String(addSectionForm.assignedTeacherEmail || "").toLowerCase();
-  const selectedTeacher = registeredTeachers.find((t) => String(t.email || "").toLowerCase() === selectedTeacherEmail);
-  const selectedTeacherSubjects = Array.from(
-    new Set([
-      ...(Array.isArray(selectedTeacher?.subjects) ? selectedTeacher.subjects : []),
-      ...sections
-        .filter((s) => String(s.assignedTeacherEmail || "").toLowerCase() === selectedTeacherEmail)
-        .map((s) => String(s.subject || "").trim()),
-    ].map((s) => String(s || "").trim()).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b));
+
+  const getTeacherSubjects = useCallback((teacherEmail = "") => {
+    const normalizedTeacherEmail = String(teacherEmail || "").toLowerCase();
+    const teacher = registeredTeachers.find(
+      (t) => String(t.email || "").toLowerCase() === normalizedTeacherEmail
+    );
+
+    return Array.from(
+      new Set([
+        ...(Array.isArray(teacher?.subjects) ? teacher.subjects : []),
+        ...sections
+          .filter((s) => String(s.assignedTeacherEmail || "").toLowerCase() === normalizedTeacherEmail)
+          .map((s) => String(s.subject || "").trim()),
+      ].map((s) => String(s || "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+  }, [registeredTeachers, sections]);
+
+  const selectedTeacherSubjects = useMemo(
+    () => getTeacherSubjects(selectedTeacherEmail),
+    [getTeacherSubjects, selectedTeacherEmail]
+  );
   const sectionNameOptions = Array.from(
     new Set([
       ...sections.map((s) => String(s.name || "").trim()),
@@ -229,6 +241,24 @@ function TrackingPage() {
 
     fetchRegisteredTeachers();
   }, [isSectionAdmin]);
+
+  useEffect(() => {
+    if (!selectedTeacherEmail) return;
+
+    // Keep subject aligned with selected teacher choices.
+    if (selectedTeacherSubjects.length === 1 && addSectionForm.subject !== selectedTeacherSubjects[0]) {
+      setAddSectionForm((prev) => ({ ...prev, subject: selectedTeacherSubjects[0] }));
+      return;
+    }
+
+    if (
+      selectedTeacherSubjects.length > 1 &&
+      addSectionForm.subject &&
+      !selectedTeacherSubjects.includes(addSectionForm.subject)
+    ) {
+      setAddSectionForm((prev) => ({ ...prev, subject: "" }));
+    }
+  }, [selectedTeacherEmail, selectedTeacherSubjects, addSectionForm.subject]);
 
   const handleAddSection = async (e) => {
     e.preventDefault();
@@ -809,7 +839,12 @@ function TrackingPage() {
                   value={addSectionForm.assignedTeacherEmail}
                   onChange={(e) => {
                     const teacherEmail = e.target.value;
-                    setAddSectionForm((prev) => ({ ...prev, assignedTeacherEmail: teacherEmail, subject: "" }));
+                    const nextTeacherSubjects = getTeacherSubjects(teacherEmail);
+                    setAddSectionForm((prev) => ({
+                      ...prev,
+                      assignedTeacherEmail: teacherEmail,
+                      subject: nextTeacherSubjects.length === 1 ? nextTeacherSubjects[0] : "",
+                    }));
                   }}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
                   required
@@ -825,30 +860,27 @@ function TrackingPage() {
                 </select>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Subject</label>
-                  <select
+                  <input
+                    type="text"
+                    list="teacher-subject-options"
                     value={addSectionForm.subject}
                     onChange={(e) => setAddSectionForm((prev) => ({ ...prev, subject: e.target.value }))}
-                    disabled={!selectedTeacherEmail || selectedTeacherSubjects.length === 0}
+                    disabled={!selectedTeacherEmail}
+                    placeholder={!selectedTeacherEmail ? "Select teacher first" : "Type or select teacher subject"}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-300"
                     required
-                  >
-                    <option value="" disabled>
-                      {!selectedTeacherEmail
-                        ? "Select teacher first"
-                        : selectedTeacherSubjects.length > 0
-                          ? "Select Subject"
-                          : "No subject option available"}
-                    </option>
+                  />
+                  <datalist id="teacher-subject-options">
                     {selectedTeacherSubjects.map((subj) => (
                       <option key={subj} value={subj}>{subj}</option>
                     ))}
-                  </select>
+                  </datalist>
                   <p className="text-[11px] text-gray-400 mt-1">
                     {selectedTeacherEmail
                       ? (selectedTeacherSubjects.length > 0
-                        ? "Options are based on the selected teacher's existing records."
-                        : "No subject record yet for this teacher.")
-                      : "Choose a teacher to load suggested subjects."}
+                        ? "Subject suggestions are based on the selected teacher's records."
+                        : "No previous subject yet; type the teacher's subject manually.")
+                      : "Choose a teacher first, then enter the teacher's subject."}
                   </p>
                 </div>
                 <div>
