@@ -537,6 +537,28 @@ function TrackingPage() {
       const cell = (v, style) => ({ v, s: style, t: typeof v === "number" ? "n" : "s" });
 
       const buildGenderSheet = (sheetStudents, genderLabel) => {
+        // Helper to extract last, first, middle initial
+        function parseName(fullName) {
+          const parts = String(fullName || "").trim().split(/\s+/);
+          if (parts.length === 1) return { last: parts[0], first: "", middle: "" };
+          const last = parts[parts.length - 1];
+          const first = parts[0];
+          let middle = "";
+          if (parts.length > 2) {
+            // Middle initial is first letter of middle part (if any)
+            middle = parts.slice(1, -1).map(p => p[0]).join("");
+          }
+          return { last, first, middle };
+        }
+
+        // Sort students by last name (then first name)
+        const sortedStudents = sheetStudents.slice().sort((a, b) => {
+          const na = parseName(a.name);
+          const nb = parseName(b.name);
+          const lastCmp = na.last.localeCompare(nb.last);
+          if (lastCmp !== 0) return lastCmp;
+          return na.first.localeCompare(nb.first);
+        });
         const ws = {};
         let R = 0; // 0-indexed row
 
@@ -579,7 +601,7 @@ function TrackingPage() {
 
         // Row 4 — Date number header
         setCell(R, 0, "#", s.colHeaderDate);
-        setCell(R, 1, "LEARNER'S NAME (Last Name, First Name, Middle Name)", s.colHeaderName);
+        setCell(R, 1, "LEARNER'S NAME (Last Name, First Name, Middle Initial)", s.colHeaderName);
         weekdays.forEach((d, i) => setCell(R, 2 + i, d.getDate(), s.colHeaderDate));
         setCell(R, 2 + weekdays.length, "ABSENT", s.colHeaderSummary);
         setCell(R, 2 + weekdays.length + 1, "TARDY", s.colHeaderSummary);
@@ -597,7 +619,7 @@ function TrackingPage() {
         const presentCounts = new Array(weekdays.length).fill(0);
         let totalAbsentAll = 0;
         let totalLateAll = 0;
-        sheetStudents.forEach((stu, i) => {
+        sortedStudents.forEach((stu, i) => {
           const isEven = i % 2 === 1;
           const nStyle = isEven ? s.nameEven : s.nameOdd;
           const numStyle = isEven ? s.numEven : s.numOdd;
@@ -605,8 +627,12 @@ function TrackingPage() {
           const lStyle = isEven ? s.lateEven : s.late;
           const aStyle = isEven ? s.absentEven : s.absent;
 
+          // Format: LASTNAME, FIRSTNAME M.
+          const { last, first, middle } = parseName(stu.name);
+          const displayName = `${last}, ${first}${middle ? " " + middle.charAt(0) + "." : ""}`;
+
           setCell(R, 0, i + 1, numStyle);
-          setCell(R, 1, stu.name, nStyle);
+          setCell(R, 1, displayName, nStyle);
 
           const statusByDate = attendanceMap[stu.lrn] || {};
           let lateTotal = 0;
