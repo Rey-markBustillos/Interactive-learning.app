@@ -1,5 +1,6 @@
 import Student from "../models/Student.js";
 import Attendance from "../models/Attendance.js";
+import { cleanupSectionIfEmpty } from "../utils/sectionCleanup.js";
 
 function normalizeGender(value) {
   const raw = String(value || "").trim().toLowerCase();
@@ -91,6 +92,7 @@ export const deleteStudent = async (req, res, next) => {
     }
     // Remove all attendance tied to this student to avoid orphan records.
     await Attendance.deleteMany({ student: student._id });
+    await cleanupSectionIfEmpty(student.section);
     res.json({ message: "Student removed" });
   } catch (error) {
     next(error);

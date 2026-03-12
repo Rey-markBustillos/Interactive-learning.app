@@ -145,7 +145,6 @@ function SideNav({ active, onNavigate }) {
             </button>
           )}
           <div className="bg-white/10 rounded-2xl px-4 py-3 border border-white/10 text-center">
-            <img src="/app-logo.png" alt="Scan-to-Track logo" className="w-8 h-8 rounded-lg object-cover mx-auto mb-1.5" />
             <p className="text-red-200 text-xs">Scan-To-Track</p>
             <p className="text-red-400 text-xs mt-0.5">v1.0.0</p>
           </div>

@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Student from "../models/Student.js";
 import Attendance from "../models/Attendance.js";
 import Section from "../models/Section.js";
+import { cleanupAllOrphanSections } from "../utils/sectionCleanup.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -121,6 +122,7 @@ export const deleteUser = async (req, res, next) => {
       ],
     });
     await Student.deleteMany({ owner: req.params.id });
+    await cleanupAllOrphanSections();
     await User.findByIdAndDelete(req.params.id);
 
     res.json({ message: "User deleted successfully" });

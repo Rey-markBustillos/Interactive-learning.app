@@ -3,7 +3,7 @@ import XLSXStyle from "xlsx-js-style";
 import {
   FaSearch, FaCalendarAlt, FaClipboardList, FaClock,
   FaTimes, FaFileExcel, FaBook, FaUserCheck, FaLayerGroup, FaUsers,
-  FaCheckCircle, FaTimesCircle,
+  FaCheckCircle, FaTimesCircle, FaTrash,
 } from "react-icons/fa";
 
 const API = import.meta.env.VITE_API_URL;
@@ -993,6 +993,16 @@ function TrackingPage() {
                     <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
                       <FaUsers size={11} /> {secStudents.length}
                     </div>
+                    {isSectionAdmin && meta && (
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); handleRemoveAssignment(meta._id, `${meta.name} | ${meta.subject}`); }}
+                        className="ml-2 p-2 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
+                        title="Delete section"
+                      >
+                        <FaTrash size={14} />
+                      </button>
+                    )}
                   </div>
                   {/* Preview row */}
                   <div className="px-5 py-3 flex items-center gap-2 flex-wrap">

@@ -10,9 +10,11 @@ function toMinutes(value) {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
-export const getSections = async (_req, res, next) => {
+export const getSections = async (req, res, next) => {
   try {
-    const sections = await Section.find({}).sort({ name: 1 });
+    const userEmail = String(req.user?.email || "").toLowerCase();
+    const filter = userEmail === SUPER_ADMIN_EMAIL ? {} : { assignedTeacherEmail: userEmail };
+    const sections = await Section.find(filter).sort({ name: 1 });
     res.json(sections);
   } catch (error) {
     next(error);
