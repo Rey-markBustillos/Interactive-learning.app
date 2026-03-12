@@ -1059,16 +1059,16 @@ function TrackingPage() {
         const secStudents = sectionMap[sectionModal] || [];
         const sectionMeta = sectionInfoMap[normalizeSectionKey(sectionModal)];
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setSectionModal(null)}>
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setSectionModal(null)}>
+            <div className="bg-white w-full h-full overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
               {/* Modal header */}
-              <div className="bg-linear-to-r from-[#8B1A1A] to-[#4a0a0a] px-6 py-5 flex items-center justify-between shrink-0">
+              <div className="bg-linear-to-r from-[#8B1A1A] to-[#4a0a0a] px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="bg-white/20 p-2.5 rounded-xl">
                     <FaLayerGroup size={18} className="text-white" />
                   </div>
                   <div>
-                    <h2 className="text-white font-bold text-lg">{sectionModal}</h2>
+                    <h2 className="text-white font-bold text-base sm:text-lg">{sectionModal}</h2>
                     <p className="text-red-200 text-xs">{secStudents.length} student{secStudents.length !== 1 ? "s" : ""}</p>
                     {sectionMeta && (
                       <p className="text-red-100 text-[11px] mt-0.5">
@@ -1103,14 +1103,14 @@ function TrackingPage() {
                 <table className="w-full min-w-190 text-sm">
                   <thead className="sticky top-0 z-10">
                     <tr className="text-xs text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
-                      <th className="px-5 py-3 text-left font-semibold">#</th>
-                      <th className="px-5 py-3 text-left font-semibold">LRN</th>
-                      <th className="px-5 py-3 text-left font-semibold">Name</th>
-                      <th className="px-5 py-3 text-left font-semibold">Gender</th>
-                      <th className="px-5 py-3 text-left font-semibold">Section</th>
-                      <th className="px-5 py-3 text-center font-semibold text-green-600">Present</th>
-                      <th className="px-5 py-3 text-center font-semibold text-orange-500">Late</th>
-                      <th className="px-5 py-3 text-center font-semibold text-red-500">Absent</th>
+                      <th className="px-4 sm:px-5 py-3 text-left font-semibold">#</th>
+                      <th className="px-4 sm:px-5 py-3 text-left font-semibold">LRN</th>
+                      <th className="px-4 sm:px-5 py-3 text-left font-semibold">Name</th>
+                      <th className="px-4 sm:px-5 py-3 text-left font-semibold">Gender</th>
+                      <th className="px-4 sm:px-5 py-3 text-left font-semibold">Section</th>
+                      <th className="px-4 sm:px-5 py-3 text-center font-semibold text-green-600">Present</th>
+                      <th className="px-4 sm:px-5 py-3 text-center font-semibold text-orange-500">Late</th>
+                      <th className="px-4 sm:px-5 py-3 text-center font-semibold text-red-500">Absent</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -1120,9 +1120,9 @@ function TrackingPage() {
                       const a = Math.max(0, getAbsent(s.lrn));
                       return (
                         <tr key={s._id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
-                          <td className="px-5 py-3 text-gray-500 font-mono text-xs">{s.lrn}</td>
-                          <td className="px-5 py-3">
+                          <td className="px-4 sm:px-5 py-3 text-gray-400 text-xs">{i + 1}</td>
+                          <td className="px-4 sm:px-5 py-3 text-gray-500 font-mono text-xs">{s.lrn}</td>
+                          <td className="px-4 sm:px-5 py-3">
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-full bg-linear-to-br from-[#8B1A1A] to-[#4a0a0a] flex items-center justify-center text-white font-bold text-xs shrink-0">
                                 {s.name.charAt(0)}
@@ -1130,21 +1130,21 @@ function TrackingPage() {
                               <span className="text-gray-800 font-semibold">{s.name}</span>
                             </div>
                           </td>
-                          <td className="px-5 py-3 text-gray-600 text-xs">{s.gender || "-"}</td>
-                          <td className="px-5 py-3">
+                          <td className="px-4 sm:px-5 py-3 text-gray-600 text-xs">{s.gender || "-"}</td>
+                          <td className="px-4 sm:px-5 py-3">
                             <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
                           </td>
-                          <td className="px-5 py-3 text-center">
+                          <td className="px-4 sm:px-5 py-3 text-center">
                             <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full">
                               <FaCheckCircle size={10} /> {p}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-center">
+                          <td className="px-4 sm:px-5 py-3 text-center">
                             <span className="inline-flex items-center gap-1 bg-orange-50 text-orange-500 text-xs font-bold px-2.5 py-1 rounded-full">
                               <FaClock size={10} /> {l}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-center">
+                          <td className="px-4 sm:px-5 py-3 text-center">
                             <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 text-xs font-bold px-2.5 py-1 rounded-full">
                               <FaTimesCircle size={10} /> {a}
                             </span>
