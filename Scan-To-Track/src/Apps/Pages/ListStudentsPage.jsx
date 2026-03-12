@@ -217,83 +217,187 @@ function ListStudentsPage({ studentList, archivedStudents = [], allAttendance = 
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50">
-                {selectMode && (
-                  <th className="px-4 py-3 rounded-l-xl">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleAll}
-                      className="w-4 h-4 accent-red-800 cursor-pointer"
-                    />
-                  </th>
-                )}
-                <th className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase ${!selectMode ? "rounded-l-xl" : ""}`}>#</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Gender</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Section</th>
-                <th className="px-4 py-3 text-xs font-semibold text-green-600 uppercase text-center">Present</th>
-                <th className="px-4 py-3 text-xs font-semibold text-amber-500 uppercase text-center">Late</th>
-                <th className={`px-4 py-3 text-xs font-semibold text-red-400 uppercase text-center ${!selectMode ? "rounded-r-xl" : ""}`}>Absent</th>
-              </tr>
-            </thead>
-            <tbody>
-              {studentList.map((s, i) => (
-                <tr
-                  key={s._id || s.lrn}
-                  className={`border-b border-gray-100 transition-colors ${
-                    selectMode && selectedIds.has(s._id)
-                      ? "bg-red-50"
-                      : "hover:bg-red-50/50"
-                  } ${selectMode && s._id ? "cursor-pointer" : ""}`}
-                  onClick={selectMode && s._id ? () => toggleSelect(s._id) : undefined}
-                >
-                  {selectMode && (
-                    <td className="px-4 py-3">
-                      {s._id && (
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(s._id)}
-                          onChange={() => toggleSelect(s._id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 accent-red-800 cursor-pointer"
-                        />
+          {/* Navigation Bar for Male/Female */}
+          <div className="flex gap-4 mb-2">
+            <a href="#male-section" className="text-blue-700 font-semibold hover:underline">Male</a>
+            <a href="#female-section" className="text-pink-700 font-semibold hover:underline">Female</a>
+          </div>
+
+          {/* Helper to extract last name for sorting */}
+          {(() => {
+            const getLastName = (name = "") => {
+              const parts = name.trim().split(" ");
+              return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : name.toUpperCase();
+            };
+            // Separate and sort
+            const males = studentList.filter(s => (s.gender || "").toLowerCase() === "male").sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
+            const females = studentList.filter(s => (s.gender || "").toLowerCase() === "female").sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
+
+            let rowIdx = 0;
+            return (
+              <>
+                {/* Male Section */}
+                <h3 id="male-section" className="text-lg font-bold text-blue-700 mt-4 mb-2">Male</h3>
+                <table className="w-full text-left mb-6">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      {selectMode && (
+                        <th className="px-4 py-3 rounded-l-xl">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={toggleAll}
+                            className="w-4 h-4 accent-red-800 cursor-pointer"
+                          />
+                        </th>
                       )}
-                    </td>
-                  )}
-                  <td className="px-4 py-3 text-gray-400 text-sm">{i + 1}</td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-sm">{s.lrn}</td>
-                  <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{s.name}</td>
-                  <td className="px-4 py-3 text-gray-600 text-sm">{s.gender || "-"}</td>
-                  <td className="px-4 py-3">
-                    {s.section ? (
-                      <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
-                    ) : (
-                      <span className="text-gray-300 text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full">
-                      <FaCheckCircle size={11} /> {presentMap[s.lrn] || 0}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-500 text-xs font-bold px-2.5 py-1 rounded-full">
-                      <FaClock size={11} /> {lateMap[s.lrn] || 0}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center gap-1 bg-red-50 text-red-400 text-xs font-bold px-2.5 py-1 rounded-full">
-                      <FaTimesCircle size={11} /> {totalDays - (presentMap[s.lrn] || 0) - (lateMap[s.lrn] || 0)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <th className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase ${!selectMode ? "rounded-l-xl" : ""}`}>#</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Gender</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Section</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-green-600 uppercase text-center">Present</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-amber-500 uppercase text-center">Late</th>
+                      <th className={`px-4 py-3 text-xs font-semibold text-red-400 uppercase text-center ${!selectMode ? "rounded-r-xl" : ""}`}>Absent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {males.map((s) => (
+                      <tr
+                        key={s._id || s.lrn}
+                        className={`border-b border-gray-100 transition-colors ${
+                          selectMode && selectedIds.has(s._id)
+                            ? "bg-red-50"
+                            : "hover:bg-red-50/50"
+                        } ${selectMode && s._id ? "cursor-pointer" : ""}`}
+                        onClick={selectMode && s._id ? () => toggleSelect(s._id) : undefined}
+                      >
+                        {selectMode && (
+                          <td className="px-4 py-3">
+                            {s._id && (
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(s._id)}
+                                onChange={() => toggleSelect(s._id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 accent-red-800 cursor-pointer"
+                              />
+                            )}
+                          </td>
+                        )}
+                        <td className="px-4 py-3 text-gray-400 text-sm">{++rowIdx}</td>
+                        <td className="px-4 py-3 text-gray-600 font-mono text-sm">{s.lrn}</td>
+                        <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{s.name}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{s.gender || "-"}</td>
+                        <td className="px-4 py-3">
+                          {s.section ? (
+                            <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
+                          ) : (
+                            <span className="text-gray-300 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <FaCheckCircle size={11} /> {presentMap[s.lrn] || 0}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <FaClock size={11} /> {lateMap[s.lrn] || 0}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 bg-red-50 text-red-400 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <FaTimesCircle size={11} /> {totalDays - (presentMap[s.lrn] || 0) - (lateMap[s.lrn] || 0)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Female Section */}
+                <h3 id="female-section" className="text-lg font-bold text-pink-700 mt-8 mb-2">Female</h3>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      {selectMode && (
+                        <th className="px-4 py-3 rounded-l-xl">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={toggleAll}
+                            className="w-4 h-4 accent-red-800 cursor-pointer"
+                          />
+                        </th>
+                      )}
+                      <th className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase ${!selectMode ? "rounded-l-xl" : ""}`}>#</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">LRN</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Gender</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Section</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-green-600 uppercase text-center">Present</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-amber-500 uppercase text-center">Late</th>
+                      <th className={`px-4 py-3 text-xs font-semibold text-red-400 uppercase text-center ${!selectMode ? "rounded-r-xl" : ""}`}>Absent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {females.map((s) => (
+                      <tr
+                        key={s._id || s.lrn}
+                        className={`border-b border-gray-100 transition-colors ${
+                          selectMode && selectedIds.has(s._id)
+                            ? "bg-red-50"
+                            : "hover:bg-red-50/50"
+                        } ${selectMode && s._id ? "cursor-pointer" : ""}`}
+                        onClick={selectMode && s._id ? () => toggleSelect(s._id) : undefined}
+                      >
+                        {selectMode && (
+                          <td className="px-4 py-3">
+                            {s._id && (
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(s._id)}
+                                onChange={() => toggleSelect(s._id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-4 h-4 accent-red-800 cursor-pointer"
+                              />
+                            )}
+                          </td>
+                        )}
+                        <td className="px-4 py-3 text-gray-400 text-sm">{++rowIdx}</td>
+                        <td className="px-4 py-3 text-gray-600 font-mono text-sm">{s.lrn}</td>
+                        <td className="px-4 py-3 text-gray-800 font-semibold text-sm">{s.name}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{s.gender || "-"}</td>
+                        <td className="px-4 py-3">
+                          {s.section ? (
+                            <span className="bg-blue-50 text-blue-600 border border-blue-200 text-xs font-semibold px-2.5 py-1 rounded-full">{s.section}</span>
+                          ) : (
+                            <span className="text-gray-300 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <FaCheckCircle size={11} /> {presentMap[s.lrn] || 0}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <FaClock size={11} /> {lateMap[s.lrn] || 0}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center gap-1 bg-red-50 text-red-400 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <FaTimesCircle size={11} /> {totalDays - (presentMap[s.lrn] || 0) - (lateMap[s.lrn] || 0)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
